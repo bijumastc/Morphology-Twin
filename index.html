@@ -155,6 +155,49 @@ table.results tr:nth-child(even) { background:var(--card); }
 .next-step-box ol { margin-left:18px; }
 .next-step-box li { margin-bottom:6px; font-size:0.92rem; }
 
+/* Quick Quiz module */
+.qq-card { background:var(--card); border:1px solid var(--border); border-radius:var(--radius);
+  padding:20px; margin-bottom:14px; position:relative; }
+.qq-card.answered-correct { border-color:var(--correct); }
+.qq-card.answered-wrong { border-color:var(--incorrect); }
+.qq-num { font-weight:700; color:var(--accent); font-size:0.9rem; margin-bottom:6px; }
+.qq-type { display:inline-block; font-size:0.7rem; font-weight:700; text-transform:uppercase;
+  padding:2px 8px; border-radius:8px; margin-left:8px; vertical-align:middle; }
+.qq-type.fib { background:#e3f2fd; color:#1565c0; }
+.qq-type.ow { background:#f3e5f5; color:#7b1fa2; }
+.qq-type.mcq { background:#fff3e0; color:#e65100; }
+@media(prefers-color-scheme:dark) {
+  :root:not([data-theme="light"]) .qq-type.fib { background:#0d2137; color:#64b5f6; }
+  :root:not([data-theme="light"]) .qq-type.ow { background:#2a1235; color:#ce93d8; }
+  :root:not([data-theme="light"]) .qq-type.mcq { background:#3e2000; color:#ffb74d; }
+}
+:root[data-theme="dark"] .qq-type.fib { background:#0d2137; color:#64b5f6; }
+:root[data-theme="dark"] .qq-type.ow { background:#2a1235; color:#ce93d8; }
+:root[data-theme="dark"] .qq-type.mcq { background:#3e2000; color:#ffb74d; }
+.qq-text { font-size:0.95rem; margin-bottom:12px; line-height:1.5; }
+.qq-text .blank { display:inline-block; min-width:120px; border-bottom:2px solid var(--accent);
+  text-align:center; font-weight:700; color:var(--accent); }
+.qq-input { padding:8px 12px; border:1px solid var(--border); border-radius:var(--radius);
+  font-size:0.95rem; width:100%; max-width:320px; background:var(--bg); color:var(--text); }
+.qq-input:disabled { opacity:0.7; }
+.mcq-options { list-style:none; margin:0; padding:0; }
+.mcq-options li { margin-bottom:8px; }
+.mcq-options label { display:flex; align-items:flex-start; gap:8px; padding:10px 14px;
+  background:var(--bg); border:1px solid var(--border); border-radius:var(--radius);
+  cursor:pointer; transition:border-color .2s, background .2s; font-size:0.93rem; }
+.mcq-options label:hover { border-color:var(--accent); background:var(--accent-light); }
+.mcq-options input[type=radio] { margin-top:3px; accent-color:var(--accent); }
+.mcq-options label.selected-correct { border-color:var(--correct); background:var(--correct-bg); }
+.mcq-options label.selected-wrong { border-color:var(--incorrect); background:var(--incorrect-bg); }
+.mcq-options label.reveal-correct { border-color:var(--correct); background:var(--correct-bg); }
+.qq-fb { margin-top:10px; padding:10px 14px; border-radius:var(--radius); font-size:0.88rem; display:none; }
+.qq-fb.show { display:block; }
+.qq-fb.is-correct { background:var(--correct-bg); border:1px solid var(--correct); color:var(--correct); }
+.qq-fb.is-wrong { background:var(--incorrect-bg); border:1px solid var(--incorrect); color:var(--incorrect); }
+.qq-score-ring { width:100px; height:100px; border-radius:50%; display:flex; align-items:center;
+  justify-content:center; margin:16px auto; font-size:1.8rem; font-weight:800; color:var(--accent);
+  border:6px solid var(--accent); }
+
 /* Responsive */
 @media(max-width:600px) {
   header h1 { font-size:1.4rem; }
@@ -179,6 +222,11 @@ table.results tr:nth-child(even) { background:var(--card); }
       <div class="home-card" onclick="showLearnScreen()">
         <h3>Learn Morphology <span class="badge" style="background:var(--correct)">Study</span></h3>
         <p>Review key concepts before you take the test. Topic-wise study material with definitions, examples, and quick-revision notes.</p>
+      </div>
+      <div class="home-card" onclick="startQuickQuiz()">
+        <h3>Quick Quiz <span class="badge" style="background:#e65100">30 Qs</span></h3>
+        <p>Fill in the blanks · One-word answers · Multiple choice</p>
+        <p>Fast-paced revision covering all morphology topics. Instant scoring with explanations.</p>
       </div>
       <div class="home-card" onclick="startTest(1)">
         <h3>Test Set 1 <span class="badge">Beginner</span></h3>
@@ -231,6 +279,25 @@ table.results tr:nth-child(even) { background:var(--card); }
     <div style="text-align:center;margin:32px 0">
       <button class="btn btn-primary" id="finishBtn" onclick="finishTest()" disabled>Finish Test & See Overall Feedback</button>
     </div>
+  </div>
+
+  <!-- QUICK QUIZ SCREEN -->
+  <div id="quizScreen" class="screen">
+    <div class="nav-back"><button class="btn btn-outline btn-sm" onclick="confirmExitQuiz()">← Exit Quiz</button></div>
+    <div class="section-header" style="margin-top:0">Quick Quiz — 30 Questions</div>
+    <p style="color:var(--muted);font-size:0.9rem;margin-bottom:8px">Fill in the blanks, one-word answers & multiple choice. Click <strong>Check</strong> after each answer.</p>
+    <div class="progress-text" id="qqProgressText"></div>
+    <div class="progress-bar"><div class="progress-fill" id="qqProgressFill"></div></div>
+    <div id="qqContainer"></div>
+    <div style="text-align:center;margin:28px 0">
+      <button class="btn btn-primary" id="qqFinishBtn" onclick="finishQuickQuiz()" disabled>Finish Quiz & See Score</button>
+    </div>
+  </div>
+
+  <!-- QUICK QUIZ RESULTS -->
+  <div id="quizResultScreen" class="screen">
+    <div class="nav-back"><button class="btn btn-outline btn-sm" onclick="goHome()">← Home</button></div>
+    <div id="quizResultContent"></div>
   </div>
 
   <!-- RESULTS SCREEN -->
@@ -1060,6 +1127,283 @@ function toggleLearnCard(i) {
     body.style.display = 'none';
     arrow.textContent = '▼';
   }
+}
+
+// ===== QUICK QUIZ MODULE (30 questions: FIB + One-Word + MCQ) =====
+const quickQuizData = [
+  // --- FILL IN THE BLANKS (10) ---
+  { type:'fib', q:'The smallest unit of language that carries meaning is called a ______.',
+    answer:'morpheme', explain:'A morpheme is the smallest meaningful unit — it cannot be broken into smaller meaningful parts.', topic:'morpheme_types' },
+  { type:'fib', q:'A morpheme that can stand alone as an independent word is called a ______ morpheme.',
+    answer:'free', explain:'Free morphemes (e.g., book, happy, run) can function as words by themselves.', topic:'free_bound' },
+  { type:'fib', q:'A morpheme that must be attached to another morpheme is called a ______ morpheme.',
+    answer:'bound', explain:'Bound morphemes (e.g., un-, -ness, -ed) cannot stand alone and must attach to a root.', topic:'free_bound' },
+  { type:'fib', q:'The variant forms of a single morpheme in different contexts are called ______.',
+    answer:'allomorphs', explain:'Allomorphs are variants of one morpheme, e.g., the plural -s has allomorphs /s/, /z/, /ɪz/.', topic:'morpheme_types' },
+  { type:'fib', q:'English has exactly ______ inflectional suffixes.',
+    answer:'eight', accept:['8','eight'], explain:'The 8 inflectional suffixes are: -s (plural), -\'s (possessive), -s (3rd person), -ed (past), -ing (progressive), -en/-ed (past participle), -er (comparative), -est (superlative).', topic:'inflection' },
+  { type:'fib', q:'A word-formation process that joins two independent words into one new word is called ______.',
+    answer:'compounding', explain:'Compounding combines two free morphemes: blackboard, toothbrush, sunflower.', topic:'word_formation' },
+  { type:'fib', q:'The process of shortening a longer word while keeping its meaning is called ______.',
+    answer:'clipping', explain:'Clipping shortens words: advertisement → ad, telephone → phone, gymnasium → gym.', topic:'word_formation' },
+  { type:'fib', q:'A morpheme with meaning but no visible or audible form is called a ______ morpheme.',
+    answer:'zero', accept:['zero','null'], explain:'A zero/null morpheme (∅) has grammatical function but no overt form, e.g., sheep + ∅ (plural).', topic:'zero_morpheme' },
+  { type:'fib', q:'The core morpheme carrying the main meaning of a word is called the ______.',
+    answer:'root', explain:'The root is the base morpheme, e.g., "kind" in unkindness, "write" in rewritten.', topic:'roots_affixes' },
+  { type:'fib', q:'The internalised dictionary every speaker carries in their mind is called the ______ lexicon.',
+    answer:'mental', explain:'The mental lexicon stores pronunciation, meaning, part of speech, and usage for every known word.', topic:'mental_lexicon' },
+
+  // --- ONE-WORD ANSWER (10) ---
+  { type:'ow', q:'What type of affix is added BEFORE the root? (one word)',
+    answer:'prefix', explain:'A prefix is added before the root: un-happy, re-do, dis-agree, pre-view.', topic:'roots_affixes' },
+  { type:'ow', q:'What type of affix is added AFTER the root? (one word)',
+    answer:'suffix', explain:'A suffix is added after the root: kind-ness, teach-er, quick-ly, walk-ed.', topic:'roots_affixes' },
+  { type:'ow', q:'What word-formation method merges PARTS of two words into one? (one word)',
+    answer:'blending', explain:'Blending merges parts: smoke+fog → smog, breakfast+lunch → brunch, motor+hotel → motel.', topic:'word_formation' },
+  { type:'ow', q:'What do we call a word formed from a person\'s name? (one word)',
+    answer:'eponym', explain:'Eponyms come from names: sandwich (Earl of Sandwich), boycott (Captain Boycott), watt (James Watt).', topic:'word_formation' },
+  { type:'ow', q:'What is the term for changing a word\'s part of speech without adding any affix? (one word)',
+    answer:'conversion', explain:'Conversion (zero derivation) changes category without an affix: google (N→V), email (N→V), run (V→N).', topic:'word_formation' },
+  { type:'ow', q:'What kind of morpheme class does NOT accept new members (e.g., articles, prepositions)? (one word + one word)',
+    answer:'closed class', accept:['closed class','closed'], explain:'Closed classes (articles, prepositions, conjunctions) have fixed membership and rarely accept new words.', topic:'lexical_grammatical' },
+  { type:'ow', q:'Does inflection create a NEW word or the SAME word in a different form? (one phrase)',
+    answer:'same word', accept:['same word','same','no'], explain:'Inflection adjusts grammatical form without creating a new lexeme — cat/cats are the same word.', topic:'inflection' },
+  { type:'ow', q:'What type of morphology creates entirely new words (lexemes)? (one word)',
+    answer:'derivation', accept:['derivation','derivational'], explain:'Derivational morphology creates new lexemes: happy → happiness, teach → teacher.', topic:'derivation' },
+  { type:'ow', q:'What do we call words that imitate natural sounds (e.g., buzz, hiss)? (one word)',
+    answer:'onomatopoeia', explain:'Onomatopoeia creates words mimicking sounds: buzz, hiss, splash, meow, click.', topic:'word_formation' },
+  { type:'ow', q:'Creating a word by removing an apparent affix (e.g., edit from editor) is called? (one word)',
+    answer:'backformation', accept:['backformation','back-formation','back formation'], explain:'Backformation removes an apparent affix: editor → edit, babysitter → babysit, television → televise.', topic:'word_formation' },
+
+  // --- MULTIPLE CHOICE (10) ---
+  { type:'mcq', q:'Which of the following is a FREE morpheme?',
+    options:['un-','book','-ness','-ed'], answer:1,
+    explain:'"Book" can stand alone as an independent word. The others (un-, -ness, -ed) are bound morphemes.', topic:'free_bound' },
+  { type:'mcq', q:'How many morphemes are in the word "unkindness"?',
+    options:['2','3','4','1'], answer:1,
+    explain:'un- (bound prefix) + kind (free root) + -ness (bound suffix) = 3 morphemes.', topic:'word_structure' },
+  { type:'mcq', q:'Which word-formation process created "brunch" from "breakfast + lunch"?',
+    options:['Compounding','Clipping','Blending','Backformation'], answer:2,
+    explain:'Blending merges PARTS of two words: br(eakfast) + (l)unch = brunch.', topic:'word_formation' },
+  { type:'mcq', q:'Which of these is an inflectional suffix?',
+    options:['-ness (as in kindness)','-s (as in cats)','-er (as in teacher)','-ly (as in quickly)'], answer:1,
+    explain:'Plural -s is inflectional (doesn\'t create a new word). The others are derivational suffixes.', topic:'inflection' },
+  { type:'mcq', q:'The plural -s in "dogs" is pronounced /z/. The plural -s in "cats" is pronounced /s/. These are examples of:',
+    options:['Different morphemes','Allomorphs','Free morphemes','Infixes'], answer:1,
+    explain:'They are allomorphs — different phonological forms of the same plural morpheme.', topic:'morpheme_types' },
+  { type:'mcq', q:'Which word was formed by CONVERSION (zero derivation)?',
+    options:['happiness','unhappy','to google','brunch'], answer:2,
+    explain:'"Google" went from noun to verb without any affix — that is conversion.', topic:'word_formation' },
+  { type:'mcq', q:'"Sheep" has the same form in singular and plural. The plural is marked by a:',
+    options:['Suffix -s','Zero morpheme','Prefix','No morpheme at all'], answer:1,
+    explain:'Linguists posit a zero morpheme (∅) for the plural — the meaning is there, but no overt form.', topic:'zero_morpheme' },
+  { type:'mcq', q:'In the word "teachers", which morpheme is OUTERMOST?',
+    options:['-er (agent suffix)','teach (root)','-s (plural)','All are equally outer'], answer:2,
+    explain:'Inflectional -s (plural) is always outermost, after derivational -er. Order: teach + -er + -s.', topic:'infl_vs_deriv' },
+  { type:'mcq', q:'Which of these is a CLOSED class in English?',
+    options:['Nouns','Verbs','Prepositions','Adjectives'], answer:2,
+    explain:'Prepositions are a closed class — new prepositions are rarely added. Nouns, verbs, adjectives are open classes.', topic:'lexical_grammatical' },
+  { type:'mcq', q:'NASA is an example of:',
+    options:['An initialism','An acronym','A blend','A calque'], answer:1,
+    explain:'NASA is pronounced as a word (/næsə/), making it an acronym. Initialisms are spelled out (FBI, ATM).', topic:'word_formation' }
+];
+
+let qqAnswered = 0;
+let qqCorrect = 0;
+let qqResults = []; // per-question: {correct:bool, topic}
+
+function startQuickQuiz() {
+  qqAnswered = 0;
+  qqCorrect = 0;
+  qqResults = [];
+  renderQuickQuiz();
+  showScreen('quizScreen');
+}
+
+function confirmExitQuiz() {
+  if (qqAnswered > 0 && !confirm('Exit the quiz? Your progress will be lost.')) return;
+  goHome();
+}
+
+function renderQuickQuiz() {
+  const c = document.getElementById('qqContainer');
+  c.innerHTML = '';
+
+  quickQuizData.forEach((q, i) => {
+    let typeLabel, typeCls;
+    if (q.type === 'fib') { typeLabel = 'Fill in the Blank'; typeCls = 'fib'; }
+    else if (q.type === 'ow') { typeLabel = 'One-Word Answer'; typeCls = 'ow'; }
+    else { typeLabel = 'Multiple Choice'; typeCls = 'mcq'; }
+
+    let bodyHtml = '';
+    if (q.type === 'fib') {
+      const display = q.q.replace('______', '<span class="blank" id="blankDisplay_${i}">______</span>');
+      bodyHtml = `<div class="qq-text">${display}</div>
+        <input type="text" class="qq-input" id="qqInput_${i}" placeholder="Type your answer..." autocomplete="off">
+        <button class="btn btn-outline btn-sm" style="margin-top:8px" id="qqBtn_${i}" onclick="checkQQ(${i})">Check</button>`;
+    } else if (q.type === 'ow') {
+      bodyHtml = `<div class="qq-text">${q.q}</div>
+        <input type="text" class="qq-input" id="qqInput_${i}" placeholder="Type your answer..." autocomplete="off">
+        <button class="btn btn-outline btn-sm" style="margin-top:8px" id="qqBtn_${i}" onclick="checkQQ(${i})">Check</button>`;
+    } else {
+      const opts = q.options.map((o, oi) =>
+        `<li><label id="qqLabel_${i}_${oi}"><input type="radio" name="qq_${i}" value="${oi}"> ${esc(o)}</label></li>`
+      ).join('');
+      bodyHtml = `<div class="qq-text">${q.q}</div>
+        <ul class="mcq-options" id="qqOpts_${i}">${opts}</ul>
+        <button class="btn btn-outline btn-sm" style="margin-top:8px" id="qqBtn_${i}" onclick="checkQQ(${i})">Check</button>`;
+    }
+
+    c.innerHTML += `
+      <div class="qq-card" id="qqCard_${i}">
+        <div class="qq-num">Q${i+1}. <span class="qq-type ${typeCls}">${typeLabel}</span></div>
+        ${bodyHtml}
+        <div class="qq-fb" id="qqFb_${i}"></div>
+      </div>`;
+  });
+
+  updateQQProgress();
+  document.getElementById('qqFinishBtn').disabled = true;
+}
+
+function checkQQ(i) {
+  const q = quickQuizData[i];
+  const btn = document.getElementById(`qqBtn_${i}`);
+  const fb = document.getElementById(`qqFb_${i}`);
+  const card = document.getElementById(`qqCard_${i}`);
+
+  if (btn.disabled) return;
+
+  let isCorrect = false;
+
+  if (q.type === 'fib' || q.type === 'ow') {
+    const input = document.getElementById(`qqInput_${i}`);
+    const userAns = input.value.trim().toLowerCase();
+    if (!userAns) { input.focus(); return; }
+
+    const accepted = q.accept || [q.answer];
+    isCorrect = accepted.some(a => userAns === a.toLowerCase());
+    input.disabled = true;
+  } else {
+    // MCQ
+    const selected = document.querySelector(`input[name="qq_${i}"]:checked`);
+    if (!selected) return;
+    const selIdx = parseInt(selected.value);
+    const correctIdx = q.answer;
+    isCorrect = selIdx === correctIdx;
+
+    // Disable all radios
+    document.querySelectorAll(`input[name="qq_${i}"]`).forEach(r => r.disabled = true);
+
+    // Highlight
+    if (isCorrect) {
+      document.getElementById(`qqLabel_${i}_${selIdx}`).classList.add('selected-correct');
+    } else {
+      document.getElementById(`qqLabel_${i}_${selIdx}`).classList.add('selected-wrong');
+      document.getElementById(`qqLabel_${i}_${correctIdx}`).classList.add('reveal-correct');
+    }
+  }
+
+  btn.disabled = true;
+  btn.textContent = isCorrect ? 'Correct ✓' : 'Wrong ✗';
+  card.classList.add(isCorrect ? 'answered-correct' : 'answered-wrong');
+
+  const correctAns = q.type === 'mcq' ? q.options[q.answer] : q.answer;
+  fb.className = `qq-fb show ${isCorrect ? 'is-correct' : 'is-wrong'}`;
+  fb.innerHTML = `<strong>${isCorrect ? '✓ Correct!' : '✗ Incorrect.'}</strong> ${!isCorrect ? 'Answer: <strong>' + esc(correctAns) + '</strong>. ' : ''}${q.explain}`;
+
+  qqResults[i] = { correct: isCorrect, topic: q.topic };
+  if (isCorrect) qqCorrect++;
+  qqAnswered++;
+  updateQQProgress();
+
+  if (qqAnswered >= quickQuizData.length) {
+    document.getElementById('qqFinishBtn').disabled = false;
+  }
+}
+
+function updateQQProgress() {
+  const total = quickQuizData.length;
+  const pct = Math.round((qqAnswered / total) * 100);
+  document.getElementById('qqProgressFill').style.width = pct + '%';
+  document.getElementById('qqProgressText').textContent = `${qqAnswered} of ${total} answered (${qqCorrect} correct)`;
+}
+
+function finishQuickQuiz() {
+  const total = quickQuizData.length;
+  const pct = Math.round((qqCorrect / total) * 100);
+
+  let grade, gradeMsg;
+  if (pct >= 80) { grade = 'Excellent'; gradeMsg = 'Outstanding! You have strong morphology foundations.'; }
+  else if (pct >= 60) { grade = 'Good'; gradeMsg = 'Good grasp. Review the topics you missed below.'; }
+  else if (pct >= 40) { grade = 'Average'; gradeMsg = 'You know the basics but need more revision. Check the Learn section.'; }
+  else { grade = 'Needs Improvement'; gradeMsg = 'Go through the Learn Morphology study guide and try again.'; }
+
+  // Topic breakdown
+  const topicPerf = {};
+  qqResults.forEach(r => {
+    if (!r) return;
+    if (!topicPerf[r.topic]) topicPerf[r.topic] = { correct:0, total:0 };
+    topicPerf[r.topic].total++;
+    if (r.correct) topicPerf[r.topic].correct++;
+  });
+
+  const sorted = Object.entries(topicPerf).sort((a,b) => (a[1].correct/a[1].total) - (b[1].correct/b[1].total));
+
+  let barsHtml = sorted.map(([tid, p]) => {
+    const tpct = Math.round((p.correct / p.total) * 100);
+    const cls = tpct >= 70 ? 'strong' : (tpct >= 40 ? 'medium' : 'weak');
+    const info = TOPICS[tid] || { name: tid, icon: '' };
+    return `<div class="topic-strength">
+      <span style="min-width:180px">${info.icon} ${info.name}</span>
+      <div class="bar-bg"><div class="bar-fill ${cls}" style="width:${tpct}%"></div></div>
+      <span style="min-width:60px;text-align:right;font-weight:600">${p.correct}/${p.total}</span>
+    </div>`;
+  }).join('');
+
+  const weakList = sorted.filter(([,p]) => (p.correct / p.total) < 0.5);
+  let tips = '';
+  if (weakList.length > 0) {
+    tips = `<div class="next-step-box"><h3>📌 Focus Areas</h3><ol>` +
+      weakList.slice(0, 4).map(([tid]) => {
+        const info = TOPICS[tid] || { name: tid, icon: '' };
+        return `<li>${info.icon} <strong>${info.name}</strong> — review this topic in the Learn section.</li>`;
+      }).join('') + `</ol></div>`;
+  }
+
+  // Type breakdown
+  const fibCount = qqResults.filter((r,i) => r && quickQuizData[i].type === 'fib');
+  const owCount = qqResults.filter((r,i) => r && quickQuizData[i].type === 'ow');
+  const mcqCount = qqResults.filter((r,i) => r && quickQuizData[i].type === 'mcq');
+  const fibCorrect = fibCount.filter(r => r.correct).length;
+  const owCorrect = owCount.filter(r => r.correct).length;
+  const mcqCorrect = mcqCount.filter(r => r.correct).length;
+
+  document.getElementById('quizResultContent').innerHTML = `
+    <div class="general-feedback">
+      <h2>Quick Quiz Complete!</h2>
+      <div class="qq-score-ring">${qqCorrect}/${total}</div>
+      <div class="score-display">${pct}%</div>
+      <div class="grade-text"><strong>${grade}</strong></div>
+      <p>${gradeMsg}</p>
+    </div>
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin:16px 0">
+      <h3 style="color:var(--accent);margin-bottom:12px">Score by Question Type</h3>
+      <div class="stats-grid">
+        <div class="stat-card"><div class="stat-num" style="color:#1565c0">${fibCorrect}/${fibCount.length}</div><div class="stat-label">Fill in the Blanks</div></div>
+        <div class="stat-card"><div class="stat-num" style="color:#7b1fa2">${owCorrect}/${owCount.length}</div><div class="stat-label">One-Word Answers</div></div>
+        <div class="stat-card"><div class="stat-num" style="color:#e65100">${mcqCorrect}/${mcqCount.length}</div><div class="stat-label">Multiple Choice</div></div>
+      </div>
+      <h4 style="margin-top:16px;margin-bottom:8px">Topic-wise Performance:</h4>
+      <div style="padding:8px 0">${barsHtml}</div>
+      ${tips}
+    </div>
+    <div style="text-align:center;margin:24px 0">
+      <button class="btn btn-primary" onclick="goHome()">Back to Home</button>
+      <button class="btn btn-outline" style="margin-left:8px" onclick="startQuickQuiz()">Retake Quiz</button>
+    </div>`;
+
+  showScreen('quizResultScreen');
 }
 </script>
 </body>
