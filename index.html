@@ -1,1 +1,1066 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Morphology Twin</title>
+<style>
+:root {
+  --bg: #ffffff;
+  --text: #1a1a1a;
+  --card: #f7f7f7;
+  --border: #d0d0d0;
+  --accent: #2c5f8a;
+  --accent-light: #e8f0f8;
+  --correct: #2e7d32;
+  --correct-bg: #e8f5e9;
+  --incorrect: #c62828;
+  --incorrect-bg: #ffebee;
+  --muted: #666;
+  --radius: 8px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #1a1a1a; --text: #e0e0e0; --card: #2a2a2a; --border: #444;
+    --accent: #6ba3d6; --accent-light: #1e3a52;
+    --correct: #66bb6a; --correct-bg: #1b3a1b;
+    --incorrect: #ef5350; --incorrect-bg: #3a1b1b;
+    --muted: #999;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #1a1a1a; --text: #e0e0e0; --card: #2a2a2a; --border: #444;
+  --accent: #6ba3d6; --accent-light: #1e3a52;
+  --correct: #66bb6a; --correct-bg: #1b3a1b;
+  --incorrect: #ef5350; --incorrect-bg: #3a1b1b;
+  --muted: #999;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family: 'Segoe UI', system-ui, sans-serif; background:var(--bg); color:var(--text); line-height:1.6; }
+.container { max-width:900px; margin:0 auto; padding:16px; }
+header { text-align:center; padding:32px 16px 16px; border-bottom:2px solid var(--accent); margin-bottom:24px; }
+header h1 { font-size:1.8rem; color:var(--accent); margin-bottom:4px; }
+header p { color:var(--muted); font-size:0.95rem; }
+.screen { display:none; }
+.screen.active { display:block; }
 
+/* Home screen */
+.home-cards { display:grid; gap:16px; margin-top:20px; }
+.home-card { background:var(--card); border:1px solid var(--border); border-radius:var(--radius);
+  padding:24px; cursor:pointer; transition:box-shadow .2s, border-color .2s; }
+.home-card:hover { border-color:var(--accent); box-shadow:0 2px 12px rgba(0,0,0,.08); }
+.home-card h3 { color:var(--accent); margin-bottom:6px; }
+.home-card p { color:var(--muted); font-size:0.9rem; }
+.badge { display:inline-block; background:var(--accent); color:#fff; font-size:0.75rem;
+  padding:2px 8px; border-radius:10px; margin-left:8px; vertical-align:middle; }
+
+/* Student name form */
+.name-form { background:var(--card); border:1px solid var(--border); border-radius:var(--radius);
+  padding:24px; margin:20px 0; text-align:center; }
+.name-form input { padding:10px 14px; border:1px solid var(--border); border-radius:var(--radius);
+  font-size:1rem; width:100%; max-width:360px; margin:12px 0; background:var(--bg); color:var(--text); }
+.name-form input::placeholder { color:var(--muted); }
+
+/* Buttons */
+.btn { display:inline-block; padding:10px 24px; border:none; border-radius:var(--radius);
+  font-size:0.95rem; cursor:pointer; font-weight:600; transition:opacity .2s; }
+.btn:hover { opacity:0.85; }
+.btn-primary { background:var(--accent); color:#fff; }
+.btn-outline { background:transparent; color:var(--accent); border:2px solid var(--accent); }
+.btn-sm { padding:6px 14px; font-size:0.85rem; }
+.btn:disabled { opacity:0.5; cursor:not-allowed; }
+
+/* Questions */
+.section-header { background:var(--accent-light); padding:14px 18px; border-radius:var(--radius);
+  margin:24px 0 16px; font-weight:700; color:var(--accent); font-size:1.05rem; }
+.question-block { background:var(--card); border:1px solid var(--border); border-radius:var(--radius);
+  padding:20px; margin-bottom:16px; }
+.question-block .q-num { font-weight:700; color:var(--accent); margin-bottom:6px; }
+.question-block .q-text { margin-bottom:12px; font-size:0.95rem; }
+.question-block textarea { width:100%; min-height:80px; padding:10px; border:1px solid var(--border);
+  border-radius:var(--radius); font-family:inherit; font-size:0.9rem; resize:vertical;
+  background:var(--bg); color:var(--text); }
+.question-block textarea.para { min-height:150px; }
+.question-block textarea.essay { min-height:220px; }
+.check-btn { margin-top:10px; }
+.feedback { margin-top:12px; padding:14px; border-radius:var(--radius); font-size:0.9rem; display:none; }
+.feedback.correct { background:var(--correct-bg); border:1px solid var(--correct); }
+.feedback.incorrect { background:var(--incorrect-bg); border:1px solid var(--incorrect); }
+.feedback h4 { margin-bottom:6px; }
+.feedback .model-answer { margin-top:8px; white-space:pre-wrap; }
+
+/* Progress */
+.progress-bar { background:var(--border); border-radius:20px; height:8px; margin:16px 0; overflow:hidden; }
+.progress-fill { background:var(--accent); height:100%; border-radius:20px; transition:width .4s; }
+.progress-text { text-align:center; color:var(--muted); font-size:0.85rem; margin-bottom:8px; }
+
+/* General feedback */
+.general-feedback { background:var(--card); border:2px solid var(--accent); border-radius:var(--radius);
+  padding:24px; margin:24px 0; text-align:center; }
+.general-feedback h2 { color:var(--accent); margin-bottom:12px; }
+.score-display { font-size:2.5rem; font-weight:800; color:var(--accent); }
+.grade-text { font-size:1.1rem; margin:8px 0; }
+.feedback-detail { text-align:left; margin-top:16px; font-size:0.9rem; }
+.feedback-detail li { margin-bottom:6px; }
+
+/* Teacher dashboard */
+.login-box { background:var(--card); border:1px solid var(--border); border-radius:var(--radius);
+  padding:32px; max-width:400px; margin:40px auto; text-align:center; }
+.login-box input { display:block; width:100%; padding:10px 14px; margin:8px 0;
+  border:1px solid var(--border); border-radius:var(--radius); font-size:1rem;
+  background:var(--bg); color:var(--text); }
+.login-box .error { color:var(--incorrect); font-size:0.85rem; margin-top:8px; display:none; }
+.dashboard-content { display:none; }
+.stats-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:12px; margin:16px 0; }
+.stat-card { background:var(--card); border:1px solid var(--border); border-radius:var(--radius);
+  padding:16px; text-align:center; }
+.stat-card .stat-num { font-size:1.8rem; font-weight:800; color:var(--accent); }
+.stat-card .stat-label { color:var(--muted); font-size:0.85rem; }
+table.results { width:100%; border-collapse:collapse; margin:16px 0; font-size:0.9rem; }
+table.results th, table.results td { padding:10px 12px; border:1px solid var(--border); text-align:left; }
+table.results th { background:var(--accent-light); color:var(--accent); font-weight:700; }
+table.results tr:nth-child(even) { background:var(--card); }
+.no-data { text-align:center; color:var(--muted); padding:40px; }
+.nav-back { margin-bottom:16px; }
+
+/* Learning Twin features */
+.topic-tag { display:inline-block; background:var(--accent-light); color:var(--accent); font-size:0.75rem;
+  padding:2px 8px; border-radius:10px; margin:2px 2px 6px 0; font-weight:600; }
+.suggestion-box { background:#fff8e1; border:1px solid #ffe082; border-radius:var(--radius);
+  padding:14px; margin-top:10px; font-size:0.88rem; }
+.suggestion-box h4 { color:#f57f17; margin-bottom:4px; font-size:0.9rem; }
+.suggestion-box ul { margin:6px 0 0 16px; }
+.suggestion-box li { margin-bottom:4px; }
+@media(prefers-color-scheme:dark) {
+  :root:not([data-theme="light"]) .suggestion-box { background:#3a3000; border-color:#6d5a00; }
+  :root:not([data-theme="light"]) .suggestion-box h4 { color:#ffe082; }
+}
+:root[data-theme="dark"] .suggestion-box { background:#3a3000; border-color:#6d5a00; }
+:root[data-theme="dark"] .suggestion-box h4 { color:#ffe082; }
+.learn-card { background:var(--card); border:1px solid var(--border); border-radius:var(--radius);
+  padding:20px; margin-bottom:12px; }
+.learn-card h4 { color:var(--accent); margin-bottom:8px; }
+.learn-card p { font-size:0.92rem; margin-bottom:6px; }
+.learn-card .key-points { background:var(--accent-light); padding:12px; border-radius:6px; margin-top:8px; font-size:0.88rem; }
+.learn-card .key-points li { margin-bottom:4px; }
+.topic-strength { display:flex; align-items:center; gap:8px; margin:6px 0; font-size:0.88rem; }
+.topic-strength .bar-bg { flex:1; background:var(--border); border-radius:10px; height:10px; overflow:hidden; }
+.topic-strength .bar-fill { height:100%; border-radius:10px; transition:width .5s; }
+.topic-strength .bar-fill.strong { background:var(--correct); }
+.topic-strength .bar-fill.medium { background:#e6a700; }
+.topic-strength .bar-fill.weak { background:var(--incorrect); }
+.next-step-box { background:var(--accent-light); border:2px solid var(--accent); border-radius:var(--radius);
+  padding:18px; margin:20px 0; }
+.next-step-box h3 { color:var(--accent); margin-bottom:8px; }
+.next-step-box ol { margin-left:18px; }
+.next-step-box li { margin-bottom:6px; font-size:0.92rem; }
+
+/* Responsive */
+@media(max-width:600px) {
+  header h1 { font-size:1.4rem; }
+  .stats-grid { grid-template-columns:1fr 1fr; }
+  table.results { font-size:0.8rem; }
+  table.results th, table.results td { padding:6px 8px; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Morphology Twin</h1>
+  <p>English Linguistics — Morphology Learning Digital Twin</p>
+</header>
+
+<div class="container">
+
+  <!-- HOME SCREEN -->
+  <div id="homeScreen" class="screen active">
+    <div class="home-cards">
+      <div class="home-card" onclick="showLearnScreen()">
+        <h3>Learn Morphology <span class="badge" style="background:var(--correct)">Study</span></h3>
+        <p>Review key concepts before you take the test. Topic-wise study material with definitions, examples, and quick-revision notes.</p>
+      </div>
+      <div class="home-card" onclick="startTest(1)">
+        <h3>Test Set 1 <span class="badge">Beginner</span></h3>
+        <p>15 two-mark questions · 6 paragraph questions · 4 essay questions</p>
+        <p>Covers basic definitions, morpheme types, inflection, derivation, and common word-formation methods.</p>
+      </div>
+      <div class="home-card" onclick="startTest(2)">
+        <h3>Test Set 2 <span class="badge">Intermediate</span></h3>
+        <p>15 two-mark questions · 6 paragraph questions · 4 essay questions</p>
+        <p>Deeper analysis, comparisons, allomorphs, zero morphemes, and advanced word-formation problems.</p>
+      </div>
+      <div class="home-card" onclick="showDashboard()">
+        <h3>Teacher Dashboard 🔒</h3>
+        <p>View student results, scores, and performance analytics.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- LEARN SCREEN -->
+  <div id="learnScreen" class="screen">
+    <div class="nav-back"><button class="btn btn-outline btn-sm" onclick="goHome()">← Back</button></div>
+    <h2 style="color:var(--accent);margin-bottom:16px">Learn Morphology — Topic-wise Study Guide</h2>
+    <p style="color:var(--muted);margin-bottom:20px">Review each topic before attempting the tests. Click any topic to expand.</p>
+    <div id="learnContent"></div>
+    <div style="text-align:center;margin:24px 0">
+      <button class="btn btn-primary" onclick="startTest(1)">Ready? Take Test Set 1 →</button>
+    </div>
+  </div>
+
+  <!-- NAME ENTRY -->
+  <div id="nameScreen" class="screen">
+    <div class="nav-back"><button class="btn btn-outline btn-sm" onclick="goHome()">← Back</button></div>
+    <div class="name-form">
+      <h2>Enter Your Details</h2>
+      <p>Your name and roll number will be recorded with your test results.</p>
+      <input type="text" id="studentRollNo" placeholder="Roll No (e.g. 2024ENG001)" maxlength="50">
+      <input type="text" id="studentName" placeholder="Full Name" maxlength="100">
+      <br>
+      <button class="btn btn-primary" onclick="beginTest()">Start Test</button>
+    </div>
+  </div>
+
+  <!-- TEST SCREEN -->
+  <div id="testScreen" class="screen">
+    <div class="nav-back"><button class="btn btn-outline btn-sm" onclick="confirmExit()">← Exit Test</button></div>
+    <div id="testTitle"></div>
+    <div class="progress-text" id="progressText"></div>
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+    <div id="questionsContainer"></div>
+    <div style="text-align:center;margin:32px 0">
+      <button class="btn btn-primary" id="finishBtn" onclick="finishTest()" disabled>Finish Test & See Overall Feedback</button>
+    </div>
+  </div>
+
+  <!-- RESULTS SCREEN -->
+  <div id="resultsScreen" class="screen">
+    <div class="nav-back"><button class="btn btn-outline btn-sm" onclick="goHome()">← Home</button></div>
+    <div id="resultsContent"></div>
+  </div>
+
+  <!-- TEACHER DASHBOARD -->
+  <div id="dashboardScreen" class="screen">
+    <div class="nav-back"><button class="btn btn-outline btn-sm" onclick="goHome()">← Home</button></div>
+    <div class="login-box" id="loginBox">
+      <h2>Teacher Login</h2>
+      <input type="text" id="teacherUser" placeholder="Username">
+      <input type="password" id="teacherPass" placeholder="Password">
+      <button class="btn btn-primary" style="width:100%;margin-top:8px" onclick="teacherLogin()">Login</button>
+      <p class="error" id="loginError">Invalid credentials. Please try again.</p>
+      <p style="color:var(--muted);font-size:0.8rem;margin-top:12px">Default: admin / morph2024</p>
+    </div>
+    <div class="dashboard-content" id="dashboardContent"></div>
+  </div>
+
+</div>
+
+<script>
+// ===== TOPIC SYSTEM (for learning twin feedback) =====
+const TOPICS = {
+  basics: { name: 'Morphology Basics', icon: '📖' },
+  morpheme_types: { name: 'Morph / Morpheme / Allomorph', icon: '🔤' },
+  free_bound: { name: 'Free & Bound Morphemes', icon: '🔗' },
+  roots_affixes: { name: 'Roots & Affixes', icon: '🌿' },
+  zero_morpheme: { name: 'Zero Morpheme', icon: '∅' },
+  inflection: { name: 'Inflectional Morphology', icon: '⚙' },
+  derivation: { name: 'Derivational Morphology', icon: '🔧' },
+  infl_vs_deriv: { name: 'Inflection vs. Derivation', icon: '⚖' },
+  word_formation: { name: 'Word-Formation Methods', icon: '🏗' },
+  lexical_grammatical: { name: 'Lexical vs. Grammatical Items', icon: '📋' },
+  mental_lexicon: { name: 'Mental Lexicon & Lexemes', icon: '🧠' },
+  word_structure: { name: 'Word Structure Analysis', icon: '🔬' }
+};
+
+// ===== LEARNING MODULE CONTENT =====
+const LEARN_DATA = [
+  { id:'basics', title:'What is Morphology?',
+    content:'Morphology is the branch of linguistics that studies the internal structure of words — how words are built out of smaller parts, and the rules a language uses to form them. The word comes from Greek morphē ("form") + logos ("study").',
+    keyPoints:['Studies how existing words are structured','Studies how new words are formed','Two branches: inflection and derivation','Central concept: the morpheme'] },
+  { id:'morpheme_types', title:'Morph, Morpheme & Allomorph',
+    content:'A <b>morph</b> is the actual physical form (sounds/letters) representing a unit of meaning. A <b>morpheme</b> is the smallest unit of language that carries meaning — it is abstract. An <b>allomorph</b> is a variant form of one morpheme in different contexts.',
+    keyPoints:['Morph = concrete surface form (what you see/hear)','Morpheme = abstract smallest meaningful unit','Allomorph = variant of one morpheme (e.g., plural -s has /s/, /z/, /ɪz/)','Past tense -ed has allomorphs /t/, /d/, /ɪd/','Negative in- has allomorphs im-, il-, ir-','Relationship: morpheme (abstract) → allomorphs (variants) → morph (instance)'] },
+  { id:'free_bound', title:'Free & Bound Morphemes',
+    content:'<b>Free morphemes</b> can stand alone as words: book, happy, run. <b>Bound morphemes</b> must attach to another morpheme: un-, -ness, -ed, -s.',
+    keyPoints:['Free: book, dog, happy, run, the, and','Bound: un-, re-, dis-, pre-, -ness, -er, -ed, -ing, -s','Example: un·kind·ness = un- (bound) + kind (free) + -ness (bound)','Free morphemes divide into: lexical (content) and grammatical (function)'] },
+  { id:'roots_affixes', title:'Roots & Affixes',
+    content:'The <b>root</b> is the core morpheme carrying main meaning (e.g., "kind" in unkindness). <b>Affixes</b> are bound morphemes added to roots: prefixes (before), suffixes (after), infixes (inside, rare in English), circumfixes (around, not in English).',
+    keyPoints:['Root = core meaning-bearing morpheme','Prefix: un-happy, re-do, pre-view, dis-agree','Suffix: kind-ness, teach-er, quick-ly, read-able','Infix: abso-blooming-lutely (informal English only)','Circumfix: not used in standard English'] },
+  { id:'zero_morpheme', title:'Zero (Null) Morpheme',
+    content:'A <b>zero morpheme (∅)</b> has meaning/function but no visible or audible form. We know it is there because of grammar, even though nothing is added.',
+    keyPoints:['Plural: sheep + ∅ (one sheep / five sheep); also deer, fish, aircraft','Past tense: cut + ∅ (I cut it yesterday); also hit, put, let','Written as: sheep + ∅ (plural), cut + ∅ (past)','Why posit it? To maintain systematic description — every plural has a morpheme, overt or covert'] },
+  { id:'inflection', title:'Inflectional Morphology',
+    content:'Inflection changes word form for grammar (number, tense, comparison) <b>without creating a new word</b> and <b>without changing part of speech</b>. English has exactly 8 inflectional suffixes.',
+    keyPoints:['-s plural: cat → cats','-\'s possessive: cat → cat\'s','-s 3rd person: walk → walks','-ing progressive: walk → walking','-ed past tense: walk → walked','-en/-ed past participle: eat → eaten','-er comparative: tall → taller','-est superlative: tall → tallest','Inflection is regular, productive, always outermost in the word'] },
+  { id:'derivation', title:'Derivational Morphology',
+    content:'Derivation <b>creates new words (lexemes)</b>, often changing part of speech and/or meaning. Uses both prefixes and suffixes.',
+    keyPoints:['Suffixes often change part of speech: happy(A)→happiness(N), teach(V)→teacher(N), quick(A)→quickly(Adv)','Prefixes change meaning, usually keep category: happy→unhappy, do→redo, agree→disagree','Can change both: wash(V)→washable(A, "able to be washed")','Less regular than inflection — not all bases take all affixes'] },
+  { id:'infl_vs_deriv', title:'Inflection vs. Derivation',
+    content:'This is one of the most important distinctions in morphology. They differ in whether new words are created, part-of-speech change, regularity, and position.',
+    keyPoints:['Inflection: no new word; Derivation: new lexeme','Inflection: never changes part of speech; Derivation: often does','Inflection: very regular; Derivation: less predictable','Inflection: always outermost; Derivation: closer to root','English: 8 inflectional suffixes only; dozens of derivational affixes','Example ordering: un(D) + kind(root) + ness(D) + es(I) = unkindnesses'] },
+  { id:'word_formation', title:'14 Word-Formation Methods',
+    content:'English creates new words through 14 major processes:',
+    keyPoints:['1. Affixation: un-happy, teach-er','2. Compounding: blackboard, toothbrush','3. Conversion: to google (N→V)','4. Blending: smog (smoke+fog), brunch','5. Clipping: ad, phone, gym, exam','6. Acronyms: NASA, laser, radar (said as word)','7. Initialisms: FBI, DVD, ATM (spelled out)','8. Backformation: edit (from editor)','9. Reduplication: bye-bye, zigzag, chit-chat','10. Coinage: google, xerox, kleenex','11. Borrowing: pizza (Italian), café (French)','12. Eponyms: sandwich, boycott, watt','13. Onomatopoeia: buzz, hiss, splash','14. Calque: skyscraper → gratte-ciel (Fr.)'] },
+  { id:'lexical_grammatical', title:'Lexical vs. Grammatical Morphemes',
+    content:'<b>Lexical (content)</b> morphemes carry meaning: nouns, verbs, adjectives, adverbs. <b>Grammatical (function)</b> morphemes serve structure: articles, prepositions, conjunctions, pronouns.',
+    keyPoints:['Lexical = open class (new words added freely): blog, selfie, tweet','Grammatical = closed class (fixed membership, rarely changes): the, in, and','Content words: book, run, happy, quickly','Function words: a, the, in, on, and, but, he, she','This maps to: open class (lexical) vs. closed class (grammatical)'] },
+  { id:'mental_lexicon', title:'Mental Lexicon & Lexemes',
+    content:'The <b>mental lexicon</b> is the internalised dictionary every speaker carries. A <b>lexeme</b> is a word family sharing one dictionary entry (WALK = walk, walks, walked, walking).',
+    keyPoints:['Stores: pronunciation, meaning, part of speech, syntax, formality','Differs person to person (sailor vs. botanist)','Tokens: count every word including repeats','Types: count each distinct form once','Lexemes: count word families (cat/cats = 1 lexeme)','Alongside stored words, we carry word-formation RULES'] }
+];
+
+// ===== QUESTION DATA (all from morphology notes only) =====
+
+const testSets = {
+  1: {
+    title: "Test Set 1 — Beginner Level",
+    twoMark: [
+      {
+        q: "Define morphology in one or two sentences.",
+        a: "Morphology is the branch of linguistics that studies the internal structure of words — how words are built out of smaller parts, and the rules a language uses to form them. It is concerned with both how existing words are structured and how new words are formed.",
+        topics: ['basics']
+      },
+      {
+        q: "What is a morpheme? Give one example.",
+        a: "A morpheme is the smallest unit of language that carries meaning or grammatical function. It cannot be divided into smaller meaningful parts. For example, 'book' is a single morpheme, and '-s' (as in 'books') is another morpheme indicating plural.",
+        topics: ['morpheme_types']
+      },
+      {
+        q: "Distinguish between a free morpheme and a bound morpheme with an example of each.",
+        a: "A free morpheme can stand alone as an independent word, such as 'book', 'happy', or 'run'. A bound morpheme cannot stand alone and must be attached to another form, such as 'un-' (as in unhappy) or '-ness' (as in kindness).",
+        topics: ['free_bound']
+      },
+      {
+        q: "What is an allomorph? Illustrate with the English plural morpheme.",
+        a: "An allomorph is one of the different forms (variants) that a single morpheme can take in different contexts. The English plural morpheme -s has three allomorphs: /s/ as in 'cats', /z/ as in 'dogs', and /ɪz/ as in 'buses'.",
+        topics: ['morpheme_types']
+      },
+      {
+        q: "Define a zero morpheme and give one example.",
+        a: "A zero (null) morpheme is a morpheme that has a meaning or grammatical function but no visible or audible form. For example, 'sheep' has the same form in singular and plural — the plural is marked by a zero morpheme: sheep + ∅.",
+        topics: ['zero_morpheme']
+      },
+      {
+        q: "What is the difference between a root and an affix?",
+        a: "A root is the core morpheme that carries the main meaning of a word, such as 'kind' in 'unkindness'. An affix is a bound morpheme added to a root to modify its meaning or grammatical function, such as 'un-' (prefix) and '-ness' (suffix).",
+        topics: ['roots_affixes']
+      },
+      {
+        q: "What is a prefix? Give two examples from English.",
+        a: "A prefix is a bound morpheme (affix) that is added before the root of a word. Examples: 'un-' in 'unhappy' (meaning 'not') and 're-' in 'redo' (meaning 'again').",
+        topics: ['roots_affixes']
+      },
+      {
+        q: "What is a suffix? Give two examples from English.",
+        a: "A suffix is a bound morpheme (affix) that is added after the root of a word. Examples: '-ness' in 'happiness' (turns adjective into noun) and '-er' in 'teacher' (turns verb into noun meaning 'one who teaches').",
+        topics: ['roots_affixes']
+      },
+      {
+        q: "How many inflectional suffixes does English have? Name any four.",
+        a: "English has only eight inflectional suffixes. Four of them are: -s (plural, as in 'cats'), -ed (past tense, as in 'walked'), -ing (present participle, as in 'walking'), and -er (comparative, as in 'taller').",
+        topics: ['inflection']
+      },
+      {
+        q: "What is compounding? Give two examples.",
+        a: "Compounding is a word-formation method that joins two or more independent words into a single new word. Examples: 'blackboard' (black + board) and 'toothbrush' (tooth + brush).",
+        topics: ['word_formation']
+      },
+      {
+        q: "Define blending and give one example.",
+        a: "Blending is a word-formation process that merges parts of two words into a single new word. For example, 'brunch' is a blend of 'breakfast' and 'lunch', and 'smog' is a blend of 'smoke' and 'fog'.",
+        topics: ['word_formation']
+      },
+      {
+        q: "What is clipping? Give two examples.",
+        a: "Clipping is a word-formation process in which a longer word is shortened while keeping its original meaning. Examples: 'ad' (from 'advertisement') and 'gym' (from 'gymnasium').",
+        topics: ['word_formation']
+      },
+      {
+        q: "What is conversion (zero derivation)? Give one example.",
+        a: "Conversion (also called zero derivation) is a word-formation process where a word changes its part of speech without adding any affix. For example, 'google' was originally a noun (the search engine) and was converted to a verb ('to google something').",
+        topics: ['word_formation']
+      },
+      {
+        q: "What is backformation? Give one example.",
+        a: "Backformation is a word-formation process in which a new word is created by removing what looks like an affix from an existing word. For example, 'edit' was formed by removing the apparent suffix '-or' from 'editor'.",
+        topics: ['word_formation']
+      },
+      {
+        q: "How does inflection differ from derivation in terms of creating new words?",
+        a: "Inflection changes the form of a word to express a grammatical feature (such as tense or number) without creating a new word or changing its part of speech — 'cat' and 'cats' are forms of the same word. Derivation creates an entirely new word (lexeme), often changing the part of speech, such as 'happy' (adjective) becoming 'happiness' (noun).",
+        topics: ['infl_vs_deriv']
+      }
+    ],
+    paragraph: [
+      {
+        q: "Explain the difference between inflectional and derivational morphology with at least three examples of each. Why is this distinction important in English linguistics?",
+        a: "Inflectional morphology and derivational morphology are the two main branches of word formation, and they differ in fundamental ways.\n\nInflectional morphology changes the form of a word to express grammatical features — such as number, tense, person, or comparison — without creating a new word and without changing the word's part of speech. For example, 'cat → cats' adds the plural -s but 'cats' is still a noun and still the same word (lexeme) as 'cat'. Similarly, 'walk → walked' adds past tense -ed but 'walked' is still a verb and the same lexeme as 'walk'. And 'tall → taller' adds comparative -er but 'taller' is still an adjective. English has only eight inflectional suffixes, and they always appear at the very end of a word.\n\nDerivational morphology, in contrast, creates a new word (a new lexeme) from an existing one, very often changing the part of speech and/or the meaning. For example, 'happy (adjective) → happiness (noun)' uses the suffix -ness and changes the category from adjective to noun. 'Teach (verb) → teacher (noun)' uses -er to create a new noun meaning 'one who teaches'. 'Happy → unhappy' uses the prefix un- to create a new word with the opposite meaning. Derivation uses both prefixes and suffixes.\n\nThis distinction matters because it shows that not all morphological changes work the same way. Inflection is regular, predictable, and grammatically required by the sentence context, while derivation is more creative, less predictable, and responsible for expanding the vocabulary of the language.",
+        topics: ['infl_vs_deriv', 'inflection', 'derivation']
+      },
+      {
+        q: "Describe any five word-formation methods in English with clear examples for each. Explain how each method creates new words.",
+        a: "English uses many methods to create new words. Here are five important ones.\n\nFirst, affixation is the process of adding a prefix or suffix to a base word. Prefixes are added before the root (e.g., 'unhappy', 'disagree', 'rewrite', 'preview') and suffixes are added after it (e.g., 'teacher', 'happiness', 'careful', 'readable'). This is the most productive word-formation method in English.\n\nSecond, compounding joins two or more independent words into a single new word. Each part can stand alone, but together they create a new meaning. Examples include 'blackboard' (black + board), 'toothbrush' (tooth + brush), 'sunflower' (sun + flower), and 'laptop' (lap + top).\n\nThird, blending merges parts of two words into one new word. Unlike compounding, blending takes only portions of each word. For example, 'smog' combines 'smoke' and 'fog', 'brunch' combines 'breakfast' and 'lunch', and 'motel' combines 'motor' and 'hotel'.\n\nFourth, clipping shortens a longer word while keeping its meaning intact. The shortened form replaces or coexists with the original. Examples: 'ad' from 'advertisement', 'phone' from 'telephone', 'gym' from 'gymnasium', and 'exam' from 'examination'.\n\nFifth, backformation creates a new word by removing what appears to be an affix from an existing word. For example, 'edit' was formed by removing the apparent suffix from 'editor', 'babysit' from 'babysitter', and 'donate' from 'donation'. The speaker assumes the longer word was derived from the shorter one, even though historically it was the other way around.",
+        topics: ['word_formation']
+      },
+      {
+        q: "What are allomorphs? Discuss the allomorphs of the English plural morpheme and the past tense morpheme with examples.",
+        a: "An allomorph is one of the different forms (variants) that a single morpheme can take in different phonological contexts. The abstract morpheme remains the same, but its actual pronunciation or spelling changes depending on the sounds around it.\n\nThe English plural morpheme -s has three allomorphs. The first is /s/, which appears after voiceless consonants, as in 'cats' (/kæts/), 'books' (/bʊks/), and 'cups'. The second is /z/, which appears after voiced consonants and vowels, as in 'dogs' (/dɒɡz/), 'bags', and 'trees'. The third is /ɪz/, which appears after sibilant sounds (s, z, ʃ, ʒ, tʃ, dʒ), as in 'buses' (/bʌsɪz/), 'watches', and 'judges'. All three are different physical forms of the same abstract plural morpheme.\n\nSimilarly, the English past tense morpheme -ed has three allomorphs. The first is /t/, which appears after voiceless consonants, as in 'walked' (/wɔːkt/), 'jumped', and 'kissed'. The second is /d/, which appears after voiced consonants and vowels, as in 'played' (/pleɪd/), 'loved', and 'opened'. The third is /ɪd/, which appears after /t/ and /d/ sounds, as in 'wanted' (/wɒntɪd/), 'needed', and 'added'.\n\nThe concept of allomorphs is important because it shows that morphemes are abstract units. What we actually hear or see — the morph — may vary, but the underlying meaning (plural or past tense) remains constant.",
+        topics: ['morpheme_types']
+      },
+      {
+        q: "Explain the concepts of morph, morpheme, and allomorph. How are these three terms related to each other?",
+        a: "These three terms — morph, morpheme, and allomorph — are closely related but refer to different levels of linguistic analysis.\n\nA morph is the actual, physical form — a segment of sounds or letters — that represents a unit of meaning in a real word. It is what you can see or hear. For example, the word 'cats' contains two morphs: 'cat' and '-s'. A morph is the concrete, surface-level form.\n\nA morpheme is the smallest unit of language that carries meaning or grammatical function. It is an abstract unit — the underlying category that one or more morphs belong to. For example, the plural morpheme is the abstract idea of 'more than one'. Morphemes are classified as free (can stand alone, like 'book' or 'happy') or bound (must attach to something, like 'un-' or '-ness').\n\nAn allomorph is one of the different forms that a single morpheme can take in different contexts. The morpheme is the same, but its pronunciation or spelling changes. For instance, the plural morpheme has three allomorphs: /s/ in 'cats', /z/ in 'dogs', and /ɪz/ in 'buses'.\n\nThe relationship among them can be summarised like this: a morpheme is the abstract category, allomorphs are its variant forms, and a morph is any one concrete instance you encounter in actual speech or writing. Just as a phoneme has allophones, a morpheme has allomorphs.",
+        topics: ['morpheme_types']
+      },
+      {
+        q: "What is the difference between acronyms and initialisms? Give three examples of each and explain why this distinction matters.",
+        a: "Acronyms and initialisms are both formed from the initial letters of a phrase, but they differ in how they are pronounced.\n\nAn acronym is pronounced as a single word, not letter by letter. Examples include 'NASA' (National Aeronautics and Space Administration), which is said as /næsə/; 'laser' (Light Amplification by Stimulated Emission of Radiation), which is now so common that many people do not realise it began as initials; and 'scuba' (Self-Contained Underwater Breathing Apparatus). Over time, many acronyms lose their capital letters and are treated as ordinary words.\n\nAn initialism, on the other hand, is spelled out letter by letter when spoken. Examples include 'FBI' (Federal Bureau of Investigation), pronounced as /ɛf-biː-aɪ/; 'DVD' (Digital Versatile Disc); and 'ATM' (Automated Teller Machine). Each letter is said individually.\n\nThis distinction matters in morphology because it shows that the same word-formation process — taking initial letters — can produce two different kinds of words with different phonological behaviour. Acronyms tend to become fully integrated into the language as ordinary vocabulary (like 'radar' and 'laser'), while initialisms usually retain their abbreviation character. Understanding this distinction helps us analyse how new words enter and evolve in a language.",
+        topics: ['word_formation']
+      },
+      {
+        q: "Discuss the concept of the null (zero) morpheme with examples. Why do linguists find it necessary to posit a morpheme that has no physical form?",
+        a: "A null or zero morpheme (symbolised as ∅) is a morpheme that carries a meaning or grammatical function but has no visible or audible form. It is an abstract unit that linguists recognise even though nothing is physically added to the word.\n\nExamples can be found in both plural formation and past tense marking. For plurals, 'sheep' has the same form whether singular or plural — 'one sheep' and 'five sheep'. The plural meaning is present, but no suffix marks it. Linguists write this as sheep + ∅ (plural). Other examples include 'deer', 'fish', and 'aircraft'. For past tense, 'cut' has the same form in present and past — 'I cut the bread now' and 'I cut the bread yesterday'. There is no added -ed, so the past tense is marked by a zero morpheme. Other examples include 'hit', 'put', and 'let'.\n\nLinguists find it necessary to posit the zero morpheme because the grammatical meaning is clearly present even when no physical marker exists. We know 'five sheep' is plural from the context, just as we know 'I cut it yesterday' is past tense. Without the concept of a zero morpheme, these forms would appear to have no grammatical marking at all, which would make the description of English morphology inconsistent. The zero morpheme allows linguists to maintain a regular, systematic description: every plural noun has a plural morpheme, whether it is overtly marked (-s) or covert (∅). It preserves the generalisation that grammatical categories are always marked, even if sometimes the marking is phonologically empty.",
+        topics: ['zero_morpheme']
+      }
+    ],
+    essay: [
+      {
+        q: "Provide a comprehensive account of inflectional morphology in English. List all eight inflectional suffixes with examples, explain why inflection does not create new words, and discuss how inflection differs from derivation. Use specific examples throughout your answer.",
+        a: "Inflectional morphology is one of the two main branches of morphology (the other being derivational morphology). Inflection changes the form of a word to express grammatical features — such as number, tense, person, or degree of comparison — without creating a new word and without changing the word's part of speech.\n\nEnglish has a relatively small inflectional system compared to many other languages. There are only eight inflectional suffixes in English:\n\n1. -s (plural): added to nouns to indicate more than one. Example: 'cat → cats', 'book → books'.\n2. -'s (possessive): added to nouns to show ownership. Example: 'cat → cat's' (as in 'the cat's tail').\n3. -s (third-person singular present): added to verbs when the subject is he, she, or it. Example: 'walk → walks', 'sing → sings'.\n4. -ing (present participle / progressive): added to verbs to form the progressive aspect. Example: 'walk → walking', 'sing → singing'.\n5. -ed (past tense): added to verbs to indicate past time. Example: 'walk → walked', 'play → played'.\n6. -ed / -en (past participle): used with auxiliary verbs to form perfect tenses or passive voice. Example: 'walk → walked' (has walked), 'eat → eaten' (has eaten).\n7. -er (comparative): added to adjectives to compare two things. Example: 'tall → taller', 'fast → faster'.\n8. -est (superlative): added to adjectives to indicate the highest degree. Example: 'tall → tallest', 'fast → fastest'.\n\nA crucial feature of inflection is that it never creates a new word (lexeme). 'Cat' and 'cats' are two forms of the same lexeme CAT; they would share a single dictionary entry. Similarly, 'walk', 'walks', 'walked', and 'walking' are all forms of the lexeme WALK. Inflection simply adjusts a word's form to fit a grammatical context — for instance, subject-verb agreement requires 'she walks' rather than 'she walk'.\n\nInflection also never changes the part of speech: a noun stays a noun ('cat → cats'), a verb stays a verb ('walk → walked'), and an adjective stays an adjective ('tall → taller').\n\nThis stands in sharp contrast to derivation. Derivational morphology creates new lexemes — entirely new words that would have their own dictionary entries. Derivation often changes the part of speech: 'happy' (adjective) becomes 'happiness' (noun) through the suffix -ness, and 'teach' (verb) becomes 'teacher' (noun) through -er. Derivation can also change meaning without changing category: 'happy' becomes 'unhappy' (both adjectives, but opposite meanings).\n\nOther key differences: inflection is very regular and productive (almost all nouns take the plural -s), while derivation is less predictable (not all adjectives take -ness). Inflectional suffixes always come at the very end of a word, after any derivational suffixes. For example, in 'unkindnesses', the derivational prefix 'un-' and suffix '-ness' come first, and the inflectional plural '-es' comes last.\n\nIn summary, inflectional morphology is the regular, predictable system by which English adjusts word forms for grammar, using just eight suffixes, while derivational morphology is the more creative system that expands the vocabulary by building new words.",
+        topics: ['inflection', 'infl_vs_deriv']
+      },
+      {
+        q: "Write a detailed essay on word-formation methods in English. Discuss at least eight methods with clear definitions, multiple examples, and an explanation of how each method contributes to vocabulary expansion.",
+        a: "Word formation is the branch of morphology concerned with how new words are created in a language. English has a remarkably rich set of word-formation methods, which is one reason its vocabulary is so large. Below are eight major methods.\n\n1. AFFIXATION: This is the most productive method in English. It involves adding prefixes or suffixes to a base word. Prefixes are added before the root and usually change meaning without changing the part of speech: 'unhappy' (un- = not), 'disagree' (dis- = opposite), 'rewrite' (re- = again), 'preview' (pre- = before), 'impossible' (im- = not). Suffixes are added after the root and often change the part of speech: 'teacher' (verb → noun, -er), 'happiness' (adjective → noun, -ness), 'quickly' (adjective → adverb, -ly), 'modernize' (adjective → verb, -ize), 'readable' (verb → adjective, -able). Affixation allows speakers to produce an enormous number of new words from existing roots.\n\n2. COMPOUNDING: This method joins two or more independent words to form a new word with its own meaning. Each part can stand alone, but together they create a specific concept. Examples: 'blackboard' (a board that is black, used for writing), 'toothbrush', 'sunflower', 'laptop', 'football', 'haircut', 'greenhouse', 'keyboard'. Compounding is very productive in English and can combine words from different categories (noun+noun: 'mailbox'; adjective+noun: 'blackbird'; verb+noun: 'pickpocket').\n\n3. BLENDING: Blending merges parts of two words into a single new word, unlike compounding which keeps both words whole. Examples: 'smog' (smoke + fog), 'brunch' (breakfast + lunch), 'motel' (motor + hotel), 'spork' (spoon + fork), 'Brexit' (Britain + exit), 'infotainment' (information + entertainment), 'emoticon' (emotion + icon). Blends are creative and often catchy, which is why they are common in marketing and media.\n\n4. CLIPPING: Clipping shortens a longer word while preserving its meaning. The clipped form typically replaces the original in casual speech. Examples: 'ad' (advertisement), 'phone' (telephone), 'gym' (gymnasium), 'exam' (examination), 'flu' (influenza), 'fridge' (refrigerator), 'math' (mathematics), 'memo' (memorandum), 'photo' (photograph). Clipping is a natural response to the need for brevity in everyday communication.\n\n5. CONVERSION (Zero Derivation): This method changes a word's part of speech without adding any affix at all. The form stays the same, but the grammatical category shifts. Examples: 'to google' (noun → verb), 'to email' (noun → verb), 'to text' (noun → verb), 'to friend' (noun → verb, from social media), 'a run' (verb → noun), 'an invite' (verb → noun). Conversion is highly productive in English and reflects the language's tendency toward simplicity.\n\n6. BACKFORMATION: In backformation, a new word is created by removing what appears to be an affix from an existing word. Speakers assume the longer word was derived from the shorter one, even though historically the longer word came first. Examples: 'edit' (from 'editor'), 'babysit' (from 'babysitter'), 'donate' (from 'donation'), 'televise' (from 'television'), 'enthuse' (from 'enthusiasm'). Backformation often produces verbs from nouns.\n\n7. BORROWING (Loanwords): English freely takes words from other languages. These borrowed words become part of English vocabulary and are used by speakers who may not know their origin. Examples: 'veranda' (Hindi), 'giraffe' (Arabic), 'pizza' and 'piano' (Italian), 'kindergarten' (German), 'café' (French), 'tsunami' (Japanese), 'robot' (Czech), 'yoga' (Sanskrit). English has borrowed from dozens of languages throughout its history, which is a major reason for the size of its vocabulary.\n\n8. COINAGE (Invention): Coinage involves inventing a completely new word, often as a brand name that eventually becomes a general term. Examples: 'google' (originally a brand name, now a common verb), 'xerox' (brand name used as a verb meaning to photocopy), 'kleenex' (brand name used for any tissue), 'aspirin', 'nylon', 'hoover' (used in British English to mean vacuum cleaner), 'escalator'. Coined words that become common, everyday vocabulary are called genericised trademarks.\n\nBeyond these eight, English also uses acronyms ('NASA', 'laser', 'radar'), initialisms ('FBI', 'DVD', 'ATM'), reduplication ('bye-bye', 'zigzag', 'chit-chat'), eponyms ('sandwich' from the Earl of Sandwich, 'boycott' from Charles Boycott), onomatopoeia ('buzz', 'hiss', 'splash'), and calque or loan translation ('skyscraper' → French 'gratte-ciel').\n\nTogether, these methods show that English has a highly flexible and creative morphological system. They allow speakers to continuously expand the vocabulary to meet new communicative needs — from new technology ('to google') to new social phenomena ('Brexit'). Understanding these processes is fundamental to understanding how languages grow and change.",
+        topics: ['word_formation']
+      },
+      {
+        q: "Explain the concepts of free and bound morphemes in detail. Discuss the different types of bound morphemes (prefixes, suffixes, infixes) with multiple examples. How do these morphemes work together to build complex words?",
+        a: "Morphemes, the smallest meaningful units of language, are fundamentally divided into two types based on whether they can stand independently: free morphemes and bound morphemes.\n\nFREE MORPHEMES are those that can stand alone as independent words. They have meaning or grammatical function by themselves. Free morphemes can be further divided into two categories. Lexical (content) free morphemes carry clear semantic content — they refer to things, actions, qualities, or states. Examples include nouns like 'book', 'dog', 'table'; verbs like 'run', 'teach', 'walk'; adjectives like 'happy', 'tall', 'quick'; and adverbs like 'often', 'soon'. Grammatical (function) free morphemes serve grammatical purposes rather than carrying rich meaning. These include articles ('a', 'the'), prepositions ('in', 'on', 'at'), conjunctions ('and', 'but', 'or'), and pronouns ('he', 'she', 'it').\n\nBOUND MORPHEMES cannot stand alone as independent words; they must be attached to another morpheme. The main types are:\n\nPrefixes are bound morphemes added before the root. In English, prefixes typically change the meaning of a word without changing its part of speech. Important examples include: 'un-' (meaning 'not'): 'unhappy', 'unkind', 'unfair'; 're-' (meaning 'again'): 'redo', 'rewrite', 'reheat'; 'dis-' (meaning 'not/opposite'): 'disagree', 'dislike', 'disconnect'; 'pre-' (meaning 'before'): 'preview', 'preheat', 'preschool'; 'mis-' (meaning 'wrongly'): 'misunderstand', 'misspell', 'misread'; 'im-/in-/il-/ir-' (meaning 'not'): 'impossible', 'indecent', 'illegal', 'irregular' — these are actually allomorphs of the same negative prefix, changing form depending on the following sound; 'over-' (meaning 'too much'): 'overcook', 'overeat'.\n\nSuffixes are bound morphemes added after the root. English suffixes can be either derivational (creating new words) or inflectional (marking grammar). Derivational suffixes often change the part of speech: '-ness' (adjective → noun): 'happiness', 'kindness', 'sadness'; '-er' (verb → noun): 'teacher', 'reader', 'singer'; '-ly' (adjective → adverb): 'quickly', 'happily', 'sadly'; '-ize' (adjective/noun → verb): 'modernize', 'hospitalize'; '-able' (verb → adjective): 'readable', 'washable', 'breakable'; '-ment' (verb → noun): 'government', 'amusement', 'agreement'; '-ful' (noun → adjective): 'careful', 'hopeful', 'beautiful'. Inflectional suffixes do not change the part of speech: '-s' (plural), '-ed' (past tense), '-ing' (present participle), '-er' (comparative), '-est' (superlative), '-'s' (possessive).\n\nInfixes are bound morphemes inserted inside a root. Infixes are rare in standard English but do occur in informal, expressive language. The most commonly cited example is the insertion of an intensifying word inside another word: 'abso-blooming-lutely', 'un-freaking-believable'. In other languages, infixes are a regular grammatical feature.\n\nHOW THEY WORK TOGETHER: Free and bound morphemes combine to build complex words in a systematic, layered way. Consider the word 'unkindnesses': the root is 'kind' (a free morpheme); the prefix 'un-' (bound, derivational) attaches to create 'unkind', changing the meaning to 'not kind'; the suffix '-ness' (bound, derivational) attaches to create 'unkindness', changing the category from adjective to noun; finally, the suffix '-es' (bound, inflectional) attaches to create 'unkindnesses', marking the plural.\n\nThis example illustrates an important rule: derivational morphemes are added before inflectional morphemes. The inflectional suffix always comes at the very outside of the word. We can also analyse 'disagreement': 'agree' (free root) + 'dis-' (bound prefix, changes meaning to 'not agree') + '-ment' (bound suffix, changes verb to noun) = 'disagreement'. Or 'rewritten': 'write' (free root) + 're-' (bound prefix, meaning 'again') + '-en' (bound suffix, past participle inflection) = 'rewritten'.\n\nIn summary, free morphemes provide the core vocabulary of the language as independent words, while bound morphemes — prefixes, suffixes, and (rarely) infixes — attach to roots to create new words (derivation) or to adjust grammatical form (inflection). Together, they give English its enormous capacity for word-building.",
+        topics: ['free_bound', 'roots_affixes']
+      },
+      {
+        q: "Discuss the role of derivational morphology in English. Explain how derivation creates new words by changing category and/or meaning, with examples of noun-forming, verb-forming, adjective-forming, and adverb-forming derivations. How does derivation contribute to vocabulary growth?",
+        a: "Derivational morphology is the branch of morphology responsible for creating new words (new lexemes) from existing ones. Unlike inflection, which merely adjusts grammatical form, derivation builds entirely new vocabulary items — words that would receive their own separate entry in a dictionary. Derivation achieves this through prefixes and suffixes, and its effects fall into three categories: changing the part of speech, changing the meaning, or changing both.\n\nNOUN-FORMING DERIVATIONS create nouns from other parts of speech. From verbs: 'teach → teacher' (-er, 'one who teaches'), 'amuse → amusement' (-ment, 'the state of being amused'), 'govern → government' (-ment), 'arrive → arrival' (-al). From adjectives: 'happy → happiness' (-ness), 'kind → kindness' (-ness), 'dangerous → danger' (here the direction is reversed historically, but synchronically -ous is the derivational suffix on the noun root). The suffixes -ness, -ment, -er, -tion, -al, and -ity are among the most productive noun-forming suffixes in English.\n\nVERB-FORMING DERIVATIONS create verbs from other categories. From adjectives: 'modern → modernize' (-ize), 'simple → simplify' (-ify), 'dark → darken' (-en). From nouns: 'hospital → hospitalize' (-ize), 'beauty → beautify' (-ify). The suffixes -ize, -ify, and -en are the main verb-forming derivational suffixes.\n\nADJECTIVE-FORMING DERIVATIONS create adjectives from other parts of speech. From verbs: 'impress → impressive' (-ive), 'read → readable' (-able), 'wash → washable' (-able). From nouns: 'monster → monstrous' (-ous), 'danger → dangerous' (-ous), 'hope → hopeful' (-ful), 'care → careful' (-ful). The suffixes -able, -ous, -ful, -ive, -less, and -al are common adjective-forming suffixes.\n\nADVERB-FORMING DERIVATIONS typically create adverbs from adjectives using the suffix -ly: 'quick → quickly', 'happy → happily', 'sad → sadly', 'careful → carefully'. The suffix -ly is overwhelmingly the most productive adverb-forming suffix in English.\n\nMEANING-CHANGING DERIVATIONS (same category): Not all derivation changes the part of speech. Some derivational affixes change the meaning while keeping the category the same. Prefix 'un-' creates negative adjectives from adjectives: 'happy → unhappy', 'kind → unkind', 'fair → unfair'. Prefix 're-' creates 'repeat action' verbs from verbs: 'do → redo', 'write → rewrite', 'wash → rewash'. Prefix 'dis-' creates opposite-meaning verbs or adjectives: 'agree → disagree', 'like → dislike', 'connect → disconnect'. Prefix 'mis-' adds the meaning 'wrongly': 'understand → misunderstand', 'spell → misspell'. Prefix 'pre-' adds 'before': 'view → preview', 'heat → preheat'.\n\nBOTH CATEGORY AND MEANING can change simultaneously. For example, 'wash (verb) → washable (adjective)' not only changes the category but adds the meaning 'able to be washed'. Similarly, 'kind (adjective) → unkindness (noun)' changes both category and meaning through the combination of un- and -ness.\n\nDERIVATION AND VOCABULARY GROWTH: Derivational morphology is one of the primary engines of vocabulary expansion in English. It provides a systematic, rule-governed way to create new words from existing ones, which gives the language enormous flexibility. A single root can generate a whole family of related words: from the root 'kind', derivation produces 'unkind', 'kindness', 'unkindness', 'kindly'. From 'modern', we get 'modernize', 'modernization', 'modernizer', 'unmodern'. This means speakers do not need to memorise a separate, unrelated word for every concept — they can build new words using familiar roots and affixes.\n\nDerivation also allows the language to adapt to new needs. When a new concept arises, speakers can coin a word using existing derivational patterns rather than inventing from scratch. The productivity of derivational affixes — the ability of -ness, -ize, -able, -er, and others to attach to new bases — ensures that English can continuously grow its vocabulary in a way that remains transparent and understandable to its speakers.\n\nIn conclusion, derivational morphology is a creative, flexible system that builds new words by adding prefixes and suffixes to existing roots. It changes categories, meanings, or both, and it is essential to the growth and adaptability of the English vocabulary.",
+        topics: ['derivation']
+      }
+    ]
+  },
+  2: {
+    title: "Test Set 2 — Intermediate Level",
+    twoMark: [
+      {
+        q: "What is an infix? Why is it considered rare in English? Give one informal English example.",
+        a: "An infix is a bound morpheme that is inserted inside a root word, rather than being added before (prefix) or after (suffix) it. It is rare in standard English because English word formation relies almost entirely on prefixes and suffixes. An informal example is 'abso-blooming-lutely', where 'blooming' is inserted into 'absolutely' for emphasis.",
+        topics: ['roots_affixes']
+      },
+      {
+        q: "What is a circumfix? Is it used in English?",
+        a: "A circumfix is a bound morpheme that attaches around a root — one part appears before the root and another part after it, working together as a single unit. Circumfixes are not used in standard English but are common in other languages, such as German (the past participle ge-...-t, as in 'gemacht').",
+        topics: ['roots_affixes']
+      },
+      {
+        q: "Explain the difference between a simple word and a complex word with one example of each.",
+        a: "A simple (simplex) word consists of a single morpheme and cannot be broken into smaller meaningful parts, such as 'giraffe' or 'dog'. A complex word consists of more than one morpheme — a root plus one or more affixes — such as 'unkindness' (un- + kind + -ness), which contains three morphemes.",
+        topics: ['word_structure']
+      },
+      {
+        q: "What is an eponym? Give two examples.",
+        a: "An eponym is a word formed from the name of a person or place. For example, 'sandwich' comes from the Earl of Sandwich, who reportedly asked for meat between slices of bread, and 'boycott' comes from Captain Charles Boycott, an Irish land agent who was socially ostracised.",
+        topics: ['word_formation']
+      },
+      {
+        q: "What is reduplication? Give two examples showing different types.",
+        a: "Reduplication is a word-formation process in which a word or part of a word is repeated, sometimes with a small change in vowel or consonant. 'Bye-bye' and 'night-night' are exact reduplications, while 'zigzag' and 'chit-chat' involve a vowel change between the repeated parts.",
+        topics: ['word_formation']
+      },
+      {
+        q: "What is onomatopoeia as a word-formation method? Give three examples.",
+        a: "Onomatopoeia is a word-formation process in which a word is created to imitate the natural sound it refers to. The word's form directly mimics the sound it names. Examples include 'buzz' (the sound of a bee), 'hiss' (the sound of a snake), and 'splash' (the sound of water being struck).",
+        topics: ['word_formation']
+      },
+      {
+        q: "What is a calque (loan translation)? How does it differ from ordinary borrowing?",
+        a: "A calque (loan translation) is a word or phrase borrowed from another language by translating its parts directly rather than adopting the foreign word itself. For example, 'skyscraper' was translated into French as 'gratte-ciel' (literally 'scrape-sky'). In ordinary borrowing, the foreign word is taken as-is (e.g., 'pizza' from Italian).",
+        topics: ['word_formation']
+      },
+      {
+        q: "Explain the difference between tokens, types, and lexemes using a short example.",
+        a: "In the sentence 'the cat sat on the mat', there are 6 tokens (every word counted individually, including 'the' twice), 5 types (each distinct word form counted once: the, cat, sat, on, mat), and 5 lexemes (word families sharing a dictionary entry). If we had 'cats' instead of 'cat', tokens and types would change but lexemes would stay the same since 'cat' and 'cats' belong to one lexeme.",
+        topics: ['mental_lexicon']
+      },
+      {
+        q: "What is meant by the mental lexicon?",
+        a: "The mental lexicon is the internalised dictionary that every speaker carries in their mind. It stores every word a person can produce or understand, along with each word's pronunciation, part of speech, meaning, syntactic properties, level of formality, and range of application. It differs from person to person — a sailor and a botanist know different specialised vocabularies.",
+        topics: ['mental_lexicon']
+      },
+      {
+        q: "Why does English have relatively 'little' inflection compared to other languages?",
+        a: "English has only eight inflectional suffixes (plural -s, possessive -'s, third-person -s, past tense -ed, present participle -ing, past participle -en/-ed, comparative -er, superlative -est). Many other languages have far more inflectional forms — for example, marking gender, case, mood, or person extensively on nouns, adjectives, and verbs. English relies more on word order and function words than on inflectional morphology.",
+        topics: ['inflection']
+      },
+      {
+        q: "In the word 'unkindnesses', identify each morpheme and classify it as free or bound, and as derivational or inflectional.",
+        a: "'Unkindnesses' contains four morphemes: 'kind' (free, root morpheme), 'un-' (bound, derivational prefix meaning 'not'), '-ness' (bound, derivational suffix changing adjective to noun), and '-es' (bound, inflectional suffix marking plural). The derivational morphemes come before the inflectional one.",
+        topics: ['word_structure', 'inflection', 'derivation']
+      },
+      {
+        q: "How do derivational prefixes and suffixes differ in their effect on part of speech?",
+        a: "In English, derivational prefixes typically change the meaning of a word but keep the same part of speech — for example, 'happy → unhappy' (both adjectives) and 'do → redo' (both verbs). Derivational suffixes, in contrast, often change the part of speech: 'happy (adjective) → happiness (noun)', 'teach (verb) → teacher (noun)', 'quick (adjective) → quickly (adverb)'.",
+        topics: ['derivation', 'roots_affixes']
+      },
+      {
+        q: "What is a lexeme? How is it different from a word form?",
+        a: "A lexeme is an abstract unit representing a family of word forms that share the same core meaning and would appear under a single dictionary entry. A word form is one specific inflected version of that lexeme. For example, WALK is a lexeme, and 'walk', 'walks', 'walked', 'walking' are its word forms — different inflected shapes of the same underlying word.",
+        topics: ['mental_lexicon']
+      },
+      {
+        q: "Give the allomorphs of the negative prefix in- and explain why they vary.",
+        a: "The negative prefix in- has four allomorphs: 'in-' (indecent), 'im-' (impossible, before bilabial sounds /p, b, m/), 'il-' (illegal, before /l/), and 'ir-' (irregular, before /r/). They vary because of a phonological process called assimilation — the final consonant of the prefix changes to match the place of articulation of the following consonant, making pronunciation easier.",
+        topics: ['morpheme_types']
+      },
+      {
+        q: "What does it mean to say inflectional suffixes are always 'outermost' in a word?",
+        a: "This means that in a word containing both derivational and inflectional morphemes, the inflectional suffix always comes at the very end, after all derivational affixes. For example, in 'unkindnesses', the derivational prefix 'un-' and suffix '-ness' are closer to the root, while the inflectional plural '-es' is outermost. No derivational affix can be added after an inflectional one.",
+        topics: ['inflection', 'infl_vs_deriv']
+      }
+    ],
+    paragraph: [
+      {
+        q: "Compare and contrast compounding and blending as word-formation methods. How are they similar and how do they differ? Provide at least three examples of each.",
+        a: "Compounding and blending are both word-formation methods that combine material from two source words into a single new word, but they work in fundamentally different ways.\n\nCompounding joins two (or more) complete, independent words to form a new word. Each component retains its full form. For example, 'blackboard' joins 'black' and 'board' completely; 'toothbrush' joins 'tooth' and 'brush'; 'sunflower' joins 'sun' and 'flower'; 'laptop' joins 'lap' and 'top'. In each case, both original words are present in their entirety within the compound.\n\nBlending, by contrast, merges only parts of two words into a new word. The source words are cut or overlapped, so neither appears in full. For example, 'smog' takes 'sm-' from 'smoke' and '-og' from 'fog'; 'brunch' takes 'br-' from 'breakfast' and '-unch' from 'lunch'; 'motel' takes 'mo-' from 'motor' and '-tel' from 'hotel'; 'spork' takes 'sp-' from 'spoon' and '-ork' from 'fork'.\n\nThe similarity is that both methods combine two existing words to produce a single new word with a meaning related to both sources. The key difference is completeness: compounds preserve both words whole, while blends clip or truncate at least one (usually both) of the source words. Additionally, compounds are often written as one word, hyphenated, or even two words (e.g., 'ice cream'), while blends are always a single fused form. Compounds tend to be more transparent in meaning (you can usually guess the meaning from the parts), whereas blends can be more opaque if you don't know the sources.",
+        topics: ['word_formation']
+      },
+      {
+        q: "Discuss conversion (zero derivation) as a word-formation process in English. Why is it especially productive in English? Provide examples of different conversion directions (noun→verb, verb→noun, adjective→verb, etc.).",
+        a: "Conversion, also called zero derivation, is a word-formation process in which a word changes its part of speech without the addition of any affix. The form of the word remains identical; only its grammatical category and function change. This process is sometimes called 'zero derivation' because the derivation happens with a zero (no visible) affix.\n\nConversion is especially productive in English for a historical and structural reason: English has lost most of its inflectional endings over the centuries. In Old English, nouns, verbs, and adjectives had distinctive endings that marked their category, so converting between categories was difficult. Modern English, however, has very few inflectional endings, which means many words have the same base form regardless of category. This makes it easy for speakers to shift a word from one category to another simply by using it in a new grammatical position.\n\nExamples of different conversion directions include:\n\nNoun → Verb: 'to google' (from the noun Google, meaning to search online), 'to email' (from the noun email), 'to text' (from the noun text, meaning to send a text message), 'to friend' (from the noun friend, in social media contexts).\n\nVerb → Noun: 'a run' (from the verb to run, as in 'go for a run'), 'an invite' (from the verb to invite, as in 'I got an invite'), 'a find' (from the verb to find, as in 'what a find!').\n\nAdjective → Verb: 'to clean' (from the adjective clean), 'to dry' (from the adjective dry), 'to empty' (from the adjective empty).\n\nNoun → Adjective: 'fun' used as an adjective ('a fun party'), 'key' used as an adjective ('a key issue').\n\nConversion demonstrates the flexibility of English morphology. It allows rapid vocabulary expansion without requiring new affixes, and it is particularly common in informal speech and in the language of technology and social media, where new verbs are frequently created from nouns ('to bookmark', 'to podcast', 'to blog').",
+        topics: ['word_formation']
+      },
+      {
+        q: "What is the significance of the distinction between lexical (content) morphemes and grammatical (function) morphemes? Discuss with examples and explain how they relate to open and closed classes.",
+        a: "The distinction between lexical (content) morphemes and grammatical (function) morphemes is fundamental to understanding how language organises meaning and structure.\n\nLexical morphemes (also called content words) carry the main semantic content of a language — they refer to objects, actions, qualities, and states in the world. They include nouns ('book', 'table', 'idea'), verbs ('run', 'teach', 'think'), adjectives ('happy', 'tall', 'red'), and adverbs ('quickly', 'often', 'very'). These words have clear, independent meanings that you can define and picture.\n\nGrammatical morphemes (also called function words) serve primarily structural or grammatical purposes. They show relationships between content words, signal grammatical categories, or hold the sentence together. They include articles ('a', 'the'), prepositions ('in', 'on', 'at', 'with'), conjunctions ('and', 'but', 'or', 'because'), pronouns ('he', 'she', 'it', 'they'), auxiliary verbs ('is', 'have', 'will'), and demonstratives ('this', 'that'). Their meanings are more abstract and relational.\n\nThis distinction maps onto the concept of open and closed classes. Lexical morphemes belong to open classes — categories that freely accept new members. We regularly add new nouns ('blog', 'emoji', 'selfie'), verbs ('to google', 'to tweet'), and adjectives ('viral', 'binge-worthy') to the language. Open classes are large and constantly growing.\n\nGrammatical morphemes belong to closed classes — categories with a fixed, small membership that rarely changes. English does not readily add new prepositions, articles, or conjunctions. The last new English pronoun to gain widespread acceptance is 'they' in singular use, and even that took decades. Closed classes are small and stable.\n\nThis distinction is important for several reasons. In language acquisition, children learn grammatical morphemes later than content words. In language disorders like agrammatic aphasia, patients often lose grammatical morphemes while retaining content words. In morphology, bound grammatical morphemes (inflectional suffixes like -s, -ed, -ing) behave differently from derivational affixes that create new content words. Understanding this distinction helps us see that language is not just a collection of meaningful words but a structured system with different types of building blocks serving different functions.",
+        topics: ['lexical_grammatical']
+      },
+      {
+        q: "Analyse the morphological structure of the following words by identifying all morphemes, classifying each as free or bound, and stating whether each bound morpheme is inflectional or derivational: (a) unbelievable, (b) rewritten, (c) disagreements, (d) unhappiness.",
+        a: "Each of these words can be broken down into its component morphemes as follows.\n\n(a) 'Unbelievable' contains three morphemes. 'Believe' is the root and a free morpheme (a verb that can stand alone). 'Un-' is a bound derivational prefix meaning 'not'. '-able' is a bound derivational suffix that changes the verb 'believe' into an adjective meaning 'able to be believed', and then 'un-' negates it to mean 'not able to be believed'. The derivational process is: believe (V) → believable (A, with -able) → unbelievable (A, with un-). Total: 1 free + 2 bound derivational = 3 morphemes.\n\n(b) 'Rewritten' contains three morphemes. 'Write' is the root and a free morpheme (a verb). 'Re-' is a bound derivational prefix meaning 'again', giving 'rewrite' (to write again). '-en' is a bound inflectional suffix marking the past participle form (as in 'has rewritten'). The structure is: write (V, free) + re- (bound, derivational) + -en (bound, inflectional). Total: 1 free + 1 bound derivational + 1 bound inflectional = 3 morphemes.\n\n(c) 'Disagreements' contains four morphemes. 'Agree' is the root and a free morpheme (a verb). 'Dis-' is a bound derivational prefix meaning 'not/opposite', giving 'disagree'. '-ment' is a bound derivational suffix that changes the verb 'disagree' into a noun 'disagreement'. '-s' is a bound inflectional suffix marking the plural. The structure is: agree (V, free) + dis- (bound, derivational) + -ment (bound, derivational) + -s (bound, inflectional). Total: 1 free + 2 bound derivational + 1 bound inflectional = 4 morphemes. Notice that the inflectional -s is outermost.\n\n(d) 'Unhappiness' contains three morphemes. 'Happy' is the root and a free morpheme (an adjective). 'Un-' is a bound derivational prefix meaning 'not', giving 'unhappy'. '-ness' is a bound derivational suffix that changes the adjective 'unhappy' into a noun meaning 'the state of not being happy'. The structure is: happy (A, free) + un- (bound, derivational) + -ness (bound, derivational). Total: 1 free + 2 bound derivational = 3 morphemes.\n\nIn all four words, the general pattern holds: free root morphemes provide the core meaning, derivational morphemes build new words by adding meaning or changing category, and inflectional morphemes (when present) always appear at the outermost position.",
+        topics: ['word_structure']
+      },
+      {
+        q: "Discuss borrowing (loanwords) and eponyms as word-formation processes. How do these processes reflect the cultural and historical interactions of English speakers? Give multiple examples.",
+        a: "Borrowing and eponyms are word-formation processes through which English acquires vocabulary from external sources — other languages in the case of borrowing, and the names of real people or places in the case of eponyms. Both processes reflect the rich cultural and historical interactions that have shaped the English language.\n\nBorrowing (loanwords) is the process of taking words from other languages and incorporating them into English. Unlike calque (which translates the foreign expression), borrowing adopts the foreign word itself, often with modified pronunciation or spelling. English has been a prolific borrower throughout its history, largely because of invasion, colonisation, trade, cultural exchange, and globalisation. Examples from various languages include: 'veranda' from Hindi (reflecting British colonial presence in India), 'giraffe' from Arabic (through trade and exploration), 'pizza' and 'piano' from Italian (through cultural exchange), 'kindergarten' from German (meaning 'children's garden', adopted for the educational concept), 'café' from French (reflecting French cultural influence on English dining and social life), 'tsunami' from Japanese (adopted when English needed a word for the phenomenon), 'robot' from Czech (coined by Karel Čapek in a play and adopted internationally), and 'yoga' from Sanskrit (reflecting the spread of Indian philosophical and physical practices).\n\nThese borrowings are not random — they reflect specific historical contacts. The large number of French loanwords in English (government, justice, beef, pork) dates from the Norman Conquest of 1066. Hindi and Urdu loanwords (jungle, bungalow, veranda) reflect the British colonial period in India. Japanese loanwords (tsunami, karate, emoji) reflect modern cultural exchange.\n\nEponyms are words derived from the names of people or places. They enter the language when a person or place becomes so strongly associated with a thing or action that the proper name becomes a common word. Examples include: 'sandwich' (from John Montagu, the Earl of Sandwich, who reportedly asked for meat between bread slices so he could eat without leaving the card table), 'boycott' (from Captain Charles Boycott, an Irish land agent who was socially ostracised by his community in 1880), 'watt' (from James Watt, the Scottish engineer, used as a unit of power), 'jeans' (from Genoa — 'jean' was cloth from Genoa, Italy), and 'sideburns' (from General Ambrose Burnside, a Civil War officer known for his distinctive facial hair).\n\nBoth processes show that vocabulary growth is not purely internal — English does not only create words through affixation, compounding, and other structural methods. It also absorbs words from external sources, reflecting the fact that language is a living, social phenomenon shaped by culture, history, trade, colonialism, science, and technology. The openness of English to borrowing and eponymy is one of the reasons it has one of the largest vocabularies of any language.",
+        topics: ['word_formation']
+      },
+      {
+        q: "Explain why linguists say that 'a word missing from the dictionary can still be a real word.' Discuss the relationship between dictionaries and the mental lexicon, and explain how word-formation rules allow speakers to create and understand words they have never encountered before.",
+        a: "This statement reflects a fundamental insight of modern linguistics: the dictionary is not the ultimate authority on what counts as a word. The true repository of a language's words is the collective mental lexicon of its speakers.\n\nDictionaries are compiled by lexicographers who select and record words based on criteria such as frequency of use, spread across communities, and longevity. However, no dictionary can possibly include every word. Dictionaries cannot list all derivatives formed with productive prefixes and suffixes — if 'unhappy' is listed, must 'unhappily', 'unhappiness', 'unhappier', and 'unhappiest' each have separate entries? What about 'un-re-readable' or 'de-un-friend'? They also cannot include all technical, scientific, regional, or slang vocabulary. Specialised fields generate thousands of terms that general dictionaries never record. New coinages, borrowings, and blends enter everyday speech before any dictionary can catalogue them. A word like 'adulting' may be used by millions of speakers before it appears in any dictionary — and its absence from the dictionary does not make it any less real to those speakers.\n\nThe mental lexicon, by contrast, is the internalised dictionary that every speaker carries. It stores every word a person can produce or understand, along with detailed information about pronunciation, meaning, part of speech, and usage. The mental lexicon differs from person to person — a botanist knows plant names a lawyer does not, and vice versa — but all native speakers share a vast common core.\n\nCritically, the mental lexicon stores not just individual words but also word-formation rules. These rules are the patterns of affixation, compounding, conversion, and other processes that speakers internalise as part of their linguistic knowledge. Because of these rules, speakers can create and understand words they have never encountered before. If someone says 'ungoogleable', a competent English speaker immediately understands it as 'not able to be googled' — even though they may never have heard the word. They apply their knowledge of 'un-' (not) + 'google' (to search) + '-able' (able to be) to decode the meaning.\n\nThis productive capacity — the ability to create and understand potentially infinite new words from a finite set of roots and rules — is a defining feature of human morphological knowledge. It demonstrates that knowing a language is not just memorising a list of words (as a dictionary would be), but possessing a generative system of rules that can produce and interpret new forms as needed. This is why linguists maintain that the mental lexicon and its word-formation rules, not the printed dictionary, are the true measure of a language's vocabulary.",
+        topics: ['mental_lexicon']
+      }
+    ],
+    essay: [
+      {
+        q: "Write a comprehensive essay comparing inflectional and derivational morphology in English. Cover the following: definition of each, how they differ in terms of creating new words, changing part of speech, productivity, and position in the word. Illustrate all points with specific examples and explain the ordering rule (why inflection always comes after derivation).",
+        a: "Inflectional morphology and derivational morphology are the two fundamental branches of word formation in English. While both involve adding affixes to base words, they serve different purposes, behave according to different rules, and occupy different positions in the structure of a word. A thorough understanding of their differences is essential to the study of English morphology.\n\nDEFINITIONS: Inflectional morphology changes the form of a word to express grammatical features — number (singular/plural), tense (present/past), person (third-person singular), comparison (comparative/superlative), aspect (progressive/perfect), and possession — without creating a new word or changing the word's part of speech. 'Walk' and 'walked' are two forms of the same word. Derivational morphology, by contrast, creates entirely new words (new lexemes) from existing ones, often changing the part of speech and always producing a word that would merit its own dictionary entry. 'Happy' and 'happiness' are different words.\n\nCREATING NEW WORDS: This is the most fundamental difference. Inflection never creates a new lexeme. 'Cat' and 'cats' are forms of the single lexeme CAT; 'walk', 'walks', 'walked', 'walking' are all forms of WALK. A dictionary lists them under one entry. Derivation always creates a new lexeme. 'Happy' and 'happiness' would have separate dictionary entries because they are different words with different grammatical properties. Similarly, 'teach' and 'teacher' are different lexemes.\n\nCHANGING PART OF SPEECH: Inflection never changes the part of speech. A noun inflected for plural remains a noun ('cat → cats'). A verb inflected for past tense remains a verb ('walk → walked'). An adjective inflected for comparative remains an adjective ('tall → taller'). Derivation frequently changes the part of speech, and this is one of its most important functions. Suffixes commonly perform this change: '-ness' turns adjectives into nouns ('happy → happiness', 'kind → kindness'), '-er' turns verbs into nouns ('teach → teacher', 'read → reader'), '-ly' turns adjectives into adverbs ('quick → quickly'), '-ize' turns adjectives or nouns into verbs ('modern → modernize'), '-able' turns verbs into adjectives ('read → readable'). Prefixes typically do not change the part of speech in English: 'happy → unhappy' (both adjectives), 'do → redo' (both verbs). However, derivation can also change meaning without changing category: 'happy → unhappy', 'kind → unkind'.\n\nPRODUCTIVITY AND REGULARITY: Inflection is highly regular and productive. Almost every noun can take the plural -s. Almost every verb can take -ed, -ing, and -s. There are exceptions (irregular plurals like 'children', irregular past tenses like 'sang'), but the regular pattern applies to the vast majority of words and is automatically extended to new words ('She tweeted', 'two selfies'). Derivation is less regular and less predictable. Not every adjective can take -ness ('*redness' is fine, but '*greeness' sounds odd compared to 'greenness'). Not every verb takes -able ('readable' is fine, but '*sleepable' is odd). You cannot always predict which derivational affix a word will take — for instance, why 'happiness' but 'sadness' (not '*happity' or '*sadment')? There is more idiosyncrasy in derivation.\n\nPOSITION IN THE WORD: A crucial structural rule governs the position of inflectional and derivational affixes: inflectional suffixes always come at the very end of a word, after all derivational affixes. This is called the ordering restriction. Consider 'unkindnesses': the root is 'kind'; then the derivational prefix 'un-' creates 'unkind'; then the derivational suffix '-ness' creates 'unkindness'; and finally the inflectional suffix '-es' creates 'unkindnesses'. The inflectional morpheme is outermost. Another example: 'modernizations' = modern + -ize (derivational, V) + -ation (derivational, N) + -s (inflectional, plural). No derivational affix can follow an inflectional one — you cannot add '-ness' after '-s', for instance (*'catsnessʼ is impossible).\n\nWHY THIS ORDERING EXISTS: The ordering reflects the nature of the two processes. Derivation operates on lexemes to create new lexemes, so it is part of the word-building process. Inflection operates on fully-formed words to fit them into sentences, so it is part of the grammar. Since the word must be fully built before it can be grammatically adjusted, derivation happens first (closer to the root) and inflection happens last (at the outer edge). Putting it differently, inflection is the interface between the word and the sentence — it adapts a finished word to its grammatical context.\n\nADDITIONAL DIFFERENCES: English has exactly eight inflectional suffixes (-s plural, -'s possessive, -s 3rd person, -ed past, -ing participle, -en/-ed past participle, -er comparative, -est superlative), and they are all suffixes — there are no inflectional prefixes in English. Derivation, however, uses dozens of different affixes, both prefixes ('un-', 're-', 'dis-', 'pre-', 'mis-', 'over-', 'im-/in-/il-/ir-') and suffixes ('-ness', '-ment', '-er', '-able', '-ize', '-ful', '-ly', '-tion', '-ous', '-ive', and many more).\n\nAlso, inflection is semantically predictable — the meaning change is always the same: -s always means 'plural', -ed always means 'past tense'. Derivation is less predictable — '-er' can mean 'one who does' ('teacher'), 'instrument' ('opener'), or 'comparative' (where it is inflectional: 'taller'), and the exact meaning of a derived word may need to be learned individually.\n\nIn conclusion, inflection and derivation are two distinct morphological systems that operate at different levels of word structure. Inflection adjusts grammar (regular, predictable, outermost, never changes category or creates new words), while derivation builds vocabulary (less regular, creative, closer to the root, frequently changes category and always creates new words). Together, they account for the rich morphological structure of English.",
+        topics: ['infl_vs_deriv', 'inflection', 'derivation']
+      },
+      {
+        q: "Write a detailed essay on the complete range of word-formation methods in English, covering all fourteen methods discussed in the morphology module. For each method, provide a clear definition, at least two examples, and a brief note on its productivity. Conclude by discussing how these methods together contribute to the richness of English vocabulary.",
+        a: "English possesses a remarkably diverse set of word-formation methods — at least fourteen distinct processes by which new words enter the language. Together, they make English one of the most lexically rich languages in the world. This essay surveys all fourteen methods.\n\n1. AFFIXATION is the addition of a prefix or suffix to a base word. It is the most productive word-formation method in English. Prefixes change meaning without changing part of speech: 'unhappy' (un- = not), 'rewrite' (re- = again), 'disagree' (dis- = opposite), 'preview' (pre- = before), 'impossible' (im- = not), 'overcook' (over- = too much). Suffixes often change the part of speech: 'teacher' (-er, verb → noun), 'happiness' (-ness, adjective → noun), 'quickly' (-ly, adjective → adverb), 'readable' (-able, verb → adjective), 'modernize' (-ize, adjective → verb). Affixation is highly productive — new affixed forms are created every day.\n\n2. COMPOUNDING joins two or more independent words into a single new word. Examples: 'blackboard', 'toothbrush', 'sunflower', 'laptop', 'football', 'greenhouse', 'keyboard', 'mailbox'. Compounding is very productive and can combine different word classes (noun+noun, adjective+noun, verb+noun).\n\n3. CONVERSION (ZERO DERIVATION) changes a word's part of speech without any affix. Examples: 'to google' (noun → verb), 'to email' (noun → verb), 'to text' (noun → verb), 'a run' (verb → noun), 'an invite' (verb → noun). Conversion is highly productive in English because the language has few inflectional endings that mark word class.\n\n4. BLENDING merges parts of two words into one new word. Examples: 'smog' (smoke + fog), 'brunch' (breakfast + lunch), 'motel' (motor + hotel), 'spork' (spoon + fork), 'Brexit' (Britain + exit), 'infotainment' (information + entertainment), 'emoticon' (emotion + icon). Blending is moderately productive, especially in media and marketing.\n\n5. CLIPPING shortens a longer word while keeping its meaning. Examples: 'ad' (advertisement), 'phone' (telephone), 'gym' (gymnasium), 'exam' (examination), 'flu' (influenza), 'fridge' (refrigerator), 'math' (mathematics), 'memo' (memorandum), 'photo' (photograph). Clipping is moderately productive, especially in informal speech.\n\n6. ACRONYMS are words formed from initial letters of a phrase and pronounced as a word. Examples: 'NASA' (National Aeronautics and Space Administration), 'laser' (Light Amplification by Stimulated Emission of Radiation), 'radar' (Radio Detection And Ranging), 'scuba' (Self-Contained Underwater Breathing Apparatus), 'UNESCO', 'PIN' (Personal Identification Number). Some acronyms become so established that speakers forget they are abbreviations.\n\n7. INITIALISMS are formed from initial letters but spelled out letter by letter, not pronounced as a word. Examples: 'FBI' (Federal Bureau of Investigation), 'DVD' (Digital Versatile Disc), 'ATM' (Automated Teller Machine), 'USA', 'BBC', 'CPU', 'HTML'. Initialisms remain recognisably abbreviations.\n\n8. BACKFORMATION creates a new word by removing what appears to be an affix from an existing word. Examples: 'edit' (from 'editor'), 'babysit' (from 'babysitter'), 'donate' (from 'donation'), 'televise' (from 'television'), 'enthuse' (from 'enthusiasm'). Backformation is not highly productive but produces notable examples, often creating verbs from nouns.\n\n9. REDUPLICATION repeats a word or part of a word, sometimes with a vowel or consonant change. Exact: 'bye-bye', 'night-night', 'so-so', 'choo-choo'. With change: 'zigzag', 'chit-chat', 'flip-flop', 'teeny-weeny', 'hocus-pocus'. Reduplication has limited productivity in English but is common in many other languages.\n\n10. COINAGE (INVENTION) is the creation of an entirely new word, often a brand name that becomes generic. Examples: 'google' (now a common verb), 'xerox' (used as a verb for photocopying), 'kleenex' (used for any tissue), 'aspirin', 'nylon', 'hoover' (British English for vacuuming), 'escalator'. Coinage is relatively rare — most 'new' words are built from existing material.\n\n11. BORROWING (LOANWORDS) takes words from other languages. Examples: 'veranda' (Hindi), 'giraffe' (Arabic), 'pizza' and 'piano' (Italian), 'kindergarten' (German), 'café' (French), 'tsunami' (Japanese), 'robot' (Czech), 'yoga' (Sanskrit). English has been an enthusiastic borrower throughout its history, and this process has contributed enormously to its vocabulary.\n\n12. EPONYMS are words formed from names of people or places. Examples: 'sandwich' (Earl of Sandwich), 'boycott' (Captain Charles Boycott), 'watt' (James Watt), 'jeans' (Genoa), 'sideburns' (General Burnside). Eponyms are a steady but modest source of new vocabulary.\n\n13. ONOMATOPOEIA creates words that imitate the sounds they refer to. Examples: 'buzz', 'hiss', 'meow', 'splash', 'bang', 'click', 'murmur', 'cuckoo'. Onomatopoeia has limited productivity but produces vivid, expressive words.\n\n14. CALQUE (LOAN TRANSLATION) borrows a phrase from another language by translating its parts directly into English, rather than adopting the foreign word. Examples: 'skyscraper' was translated into French as 'gratte-ciel'; 'flea market' comes from French 'marché aux puces'; 'superman' comes from German 'Übermensch'. Calques are relatively rare but show how languages can borrow concepts rather than words.\n\nCONCLUSION: Together, these fourteen methods form a comprehensive toolkit for vocabulary creation. They range from highly productive processes (affixation, compounding, conversion) that generate new words daily, to less productive but still important processes (backformation, coinage, calque) that add distinctive words to the lexicon at a slower pace. Some methods work purely internally, using existing English material (affixation, compounding, blending, clipping, conversion, backformation, reduplication, acronyms, initialisms), while others draw on external sources (borrowing, calque, eponyms, coinage, onomatopoeia). The diversity of these methods explains why English has one of the largest vocabularies of any language — estimated at over a million words — and why that vocabulary continues to grow as speakers encounter new concepts, technologies, and cultural influences that require new words.",
+        topics: ['word_formation']
+      },
+      {
+        q: "Write an essay on the structure of English morphemes, covering free vs. bound morphemes, roots vs. affixes, content vs. function morphemes, and open vs. closed word classes. Explain how all these distinctions interconnect and provide multiple examples throughout.",
+        a: "The morpheme — the smallest unit of language that carries meaning or grammatical function — can be classified in several overlapping ways. Understanding how these classifications interact gives us a complete picture of how English words are structured.\n\nFREE VS. BOUND MORPHEMES: The most basic distinction is between free and bound morphemes. A free morpheme can stand alone as an independent word: 'book', 'happy', 'run', 'the', 'and'. A bound morpheme cannot stand alone and must be attached to another morpheme: prefixes like 'un-', 're-', 'dis-', 'pre-', 'mis-'; suffixes like '-ness', '-er', '-ed', '-ing', '-able', '-ment', '-ly'. For example, in 'unhappiness', 'happy' is free while 'un-' and '-ness' are bound.\n\nROOTS VS. AFFIXES: Every complex word has a root — the core morpheme that carries the main meaning. In 'unkindness', 'kind' is the root. In 'rewritten', 'write' is the root. Roots are usually free morphemes in English (though some roots, called cranberry morphemes, are bound — for example, 'cran-' in 'cranberry' or 'ceive' in 'receive/perceive/conceive'). Affixes are the bound morphemes that attach to roots. English has three types: prefixes (before the root: 'un-', 're-', 'dis-'), suffixes (after the root: '-ness', '-er', '-ing'), and, rarely, infixes (inside the root: 'abso-blooming-lutely'). Other languages also use circumfixes (around the root).\n\nAffixes themselves are divided into derivational and inflectional. Derivational affixes create new words: 'happy → unhappy' (un-), 'teach → teacher' (-er), 'kind → kindness' (-ness). Inflectional affixes adjust grammatical form without creating new words: 'cat → cats' (-s plural), 'walk → walked' (-ed past). English has only eight inflectional suffixes but dozens of derivational affixes.\n\nCONTENT VS. FUNCTION MORPHEMES: Free morphemes can be further divided into content (lexical) morphemes and function (grammatical) morphemes. Content morphemes carry semantic weight — they refer to things, actions, and qualities in the world. They include nouns ('table', 'idea', 'dog'), verbs ('run', 'teach', 'build'), adjectives ('happy', 'tall', 'quick'), and adverbs ('often', 'slowly'). Function morphemes serve grammatical roles — they show relationships, mark structure, and hold sentences together. They include articles ('a', 'the'), prepositions ('in', 'on', 'at'), conjunctions ('and', 'but', 'or'), pronouns ('he', 'she', 'they'), and auxiliary verbs ('is', 'have', 'will').\n\nOPEN VS. CLOSED CLASSES: The content/function distinction maps directly onto the open/closed class distinction. Content morphemes belong to open classes — categories that freely accept new members. New nouns, verbs, adjectives, and adverbs enter English constantly: 'blog', 'selfie', 'tweet', 'to google', 'binge-worthy'. These classes are large and always growing. Function morphemes belong to closed classes — categories with a fixed membership that rarely admits new words. We do not easily create new articles, prepositions, conjunctions, or pronouns. These classes are small and stable. This is why you can imagine new nouns being added to English every year, but the idea of inventing a new preposition seems strange.\n\nHOW THESE DISTINCTIONS INTERCONNECT: All these classifications work together in a single system. Consider the word 'unhappiness':\n- 'happy' is a free morpheme (can stand alone), a root (carries the core meaning), a content morpheme (refers to a quality), and belongs to an open class (adjectives).\n- 'un-' is a bound morpheme (cannot stand alone), an affix — specifically a derivational prefix (creates a new word 'unhappy' with opposite meaning).\n- '-ness' is a bound morpheme (cannot stand alone), an affix — specifically a derivational suffix (creates a new word 'unhappiness', changing adjective to noun).\n\nNow consider the sentence 'The unhappy cats walked slowly':\n- 'The' is a free function morpheme (closed class, article).\n- 'un-' is a bound derivational affix.\n- 'happy' is a free content root (open class, adjective).\n- 'cat' is a free content root (open class, noun).\n- '-s' is a bound inflectional suffix (plural).\n- 'walk' is a free content root (open class, verb).\n- '-ed' is a bound inflectional suffix (past tense).\n- 'slow' is a free content root (open class, adjective).\n- '-ly' is a bound derivational suffix (adjective → adverb).\n\nThis analysis shows that every word in an English sentence can be decomposed into morphemes, and each morpheme can be classified along multiple dimensions simultaneously. The system is elegantly layered: roots provide meaning; derivational affixes build new words from those roots; inflectional affixes adjust the finished words for grammar; and the distinction between content (open class) and function (closed class) morphemes reflects the different roles words play in conveying meaning and structure.\n\nIn conclusion, the morphological structure of English is built on a set of interlocking distinctions — free vs. bound, root vs. affix, derivational vs. inflectional, content vs. function, open vs. closed. These are not separate, competing systems but different views of the same underlying structure. Together, they explain how a finite set of morphemes and rules can produce the enormous and ever-growing vocabulary of English.",
+        topics: ['free_bound', 'roots_affixes', 'lexical_grammatical']
+      },
+      {
+        q: "Critically evaluate the importance of morphology in linguistics. Discuss how morphological knowledge helps speakers produce and understand new words, how it connects to other areas of linguistics, and why the study of morphemes and word-formation is essential for understanding language as a system. Use examples from English morphology throughout.",
+        a: "Morphology — the study of word structure and word formation — occupies a central position in linguistics because words are the primary units that speakers manipulate in everyday communication. Far from being a mere cataloguing exercise, morphological knowledge is deeply embedded in every speaker's linguistic competence and connects to every other level of linguistic analysis.\n\nMORPHOLOGICAL KNOWLEDGE AND SPEAKER COMPETENCE: Every fluent speaker possesses an internalised system of morphological rules, even without formal training. This is demonstrated by the fact that speakers can produce and understand words they have never encountered before. If someone hears 'ungoogleable' for the first time, they immediately understand it as 'not able to be googled' by applying their knowledge of 'un-' (not), 'google' (to search), and '-able' (able to be). Similarly, if 'phubb' were presented as a new verb, English speakers would automatically produce 'phubbed' as the past tense and 'phubbing' as the present participle — applying the regular inflectional rules without being taught them.\n\nThis productive capacity — the ability to generate potentially infinite new words from a finite set of morphemes and rules — is one of the hallmarks of human language. It distinguishes human word knowledge from a mere list: the mental lexicon is not a dictionary but a dynamic system with stored words and generative rules. This is why children can say things like 'I goed' (applying the regular -ed rule to 'go') — an error that is actually evidence of morphological competence, because the child has internalised the rule even if they haven't yet learned the exception.\n\nMORPHOLOGY AND PHONOLOGY: Morphology interacts closely with phonology (the sound system). The concept of the allomorph demonstrates this directly: the plural morpheme surfaces as /s/ after voiceless consonants ('cats'), /z/ after voiced sounds ('dogs'), and /ɪz/ after sibilants ('buses'). The past tense morpheme similarly has allomorphs /t/ ('walked'), /d/ ('played'), and /ɪd/ ('wanted'). The negative prefix in- assimilates to become im- (before /p, b, m/: 'impossible'), il- (before /l/: 'illegal'), or ir- (before /r/: 'irregular'). These alternations are governed by phonological rules operating on morphological material — a clear intersection of the two domains.\n\nMORPHOLOGY AND SYNTAX: Morphology and syntax (sentence structure) are closely intertwined. Inflectional morphology is essentially the interface between the word and the sentence: subject-verb agreement requires 'she walks' (not 'she walk'), past tense marking requires 'she walked' (not 'she walk yesterday'), and plural marking ensures that 'these cats' agrees with the demonstrative 'these'. Without inflectional morphology, English sentences would lose crucial grammatical signals.\n\nDerivational morphology also interacts with syntax because it changes words' parts of speech, which determines where they can appear in a sentence. 'Happy' (adjective) can modify a noun ('a happy child') but cannot function as a noun — for that, we need 'happiness' (derived noun: 'happiness is important'). 'Teach' (verb) takes an object ('teach students') but the derived noun 'teacher' takes different syntactic positions ('the teacher arrived'). Every derivational change has syntactic consequences.\n\nMORPHOLOGY AND SEMANTICS: Morphological processes create systematic meaning relationships. Derivational suffixes have consistent (if sometimes variable) semantic contributions: '-er' means 'one who does X' ('teacher', 'reader', 'singer'), '-ness' means 'the quality of being X' ('happiness', 'kindness'), '-able' means 'able to be X-ed' ('readable', 'washable'). Understanding these meaning patterns allows speakers to decode unfamiliar derived words. Similarly, inflectional meanings are systematic: '-s' always signals plural, '-ed' always signals past tense. The zero morpheme extends this systematicity even to words with no overt marking: we know 'sheep' (plural) has a plural meaning because the grammar requires it.\n\nMORPHOLOGY AND LANGUAGE CHANGE: Word-formation processes are a window into how languages change and grow. Borrowing ('pizza', 'tsunami', 'café') reflects historical contact between cultures. Coinage ('google', 'xerox') reflects technological change. Blending ('Brexit', 'infotainment') reflects media culture. Conversion ('to text', 'to friend') reflects the flexibility of modern English. Backformation ('edit' from 'editor', 'babysit' from 'babysitter') reveals how speakers actively reanalyse word structure. Eponyms ('sandwich', 'boycott') preserve historical moments in vocabulary. By studying word-formation, linguists can trace the cultural, social, and technological forces that shape a language.\n\nMORPHOLOGY AND LANGUAGE TYPOLOGY: Morphological study also allows comparison across languages. English, with its eight inflectional suffixes, is considered a relatively 'analytic' language that relies heavily on word order and function words rather than morphological marking. Languages like Turkish or Finnish are 'agglutinating' — they build words from long chains of affixes. Latin and Russian are 'fusional' — single affixes express multiple grammatical categories simultaneously. Understanding these differences requires the conceptual tools that morphology provides.\n\nCONCLUSION: Morphology is not an isolated sub-field of linguistics but a central hub connecting phonology, syntax, semantics, language acquisition, language change, and typology. It explains how speakers build and understand words, how words fit into sentences, how vocabulary grows and changes, and how languages differ in their structural organisation. The morpheme — that smallest meaningful unit — is a deceptively simple concept that unlocks the extraordinary complexity and creativity of human language. Without morphological analysis, our understanding of language as a system would be fundamentally incomplete.",
+        topics: ['basics', 'morpheme_types', 'word_formation']
+      }
+    ]
+  }
+};
+
+// ===== APP STATE =====
+let currentSet = null;
+let studentName = '';
+let studentRollNo = '';
+let checkedCount = 0;
+let totalQuestions = 0;
+let scores = {}; // {qid: 'checked'}
+const TEACHER_USER = 'admin';
+const TEACHER_PASS = 'morph2024';
+let SHEET_URL = 'https://script.google.com/macros/s/AKfycbxb-wUcnVYNjaBBUntWbfDqli_OoeSpXfltCN3VwSTlpbmSGGW7u1N-gOL4smDyQnH9/exec';
+
+// ===== NAVIGATION =====
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0, 0);
+}
+function goHome() { showScreen('homeScreen'); }
+
+function startTest(setNum) {
+  currentSet = setNum;
+  showScreen('nameScreen');
+  document.getElementById('studentName').value = '';
+  document.getElementById('studentName').focus();
+}
+
+function beginTest() {
+  studentRollNo = document.getElementById('studentRollNo').value.trim();
+  studentName = document.getElementById('studentName').value.trim();
+  if (!studentRollNo) { document.getElementById('studentRollNo').focus(); return; }
+  if (!studentName) { document.getElementById('studentName').focus(); return; }
+  renderTest();
+  showScreen('testScreen');
+}
+
+function confirmExit() {
+  if (checkedCount > 0) {
+    if (!confirm('You have answered some questions. Are you sure you want to exit?')) return;
+  }
+  goHome();
+}
+
+// ===== RENDER TEST =====
+function renderTest() {
+  const set = testSets[currentSet];
+  document.getElementById('testTitle').innerHTML = `<div class="section-header" style="margin-top:0">${set.title}</div>`;
+
+  const container = document.getElementById('questionsContainer');
+  container.innerHTML = '';
+  checkedCount = 0;
+  scores = {};
+
+  const allQs = [];
+
+  // Two-mark questions
+  container.innerHTML += `<div class="section-header">Section A — Two-Mark Questions (Answer in 2–3 sentences each)</div>`;
+  set.twoMark.forEach((q, i) => {
+    const qid = `tm_${i}`;
+    allQs.push(qid);
+    container.innerHTML += renderQuestion(qid, i + 1, q.q, q.a, '', '2 Marks');
+  });
+
+  // Paragraph questions
+  container.innerHTML += `<div class="section-header">Section B — Paragraph Questions (Write a full paragraph for each)</div>`;
+  set.paragraph.forEach((q, i) => {
+    const qid = `para_${i}`;
+    allQs.push(qid);
+    container.innerHTML += renderQuestion(qid, i + 1, q.q, q.a, 'para', '10 Marks');
+  });
+
+  // Essay questions
+  container.innerHTML += `<div class="section-header">Section C — Essay Questions (Write detailed, multi-step answers)</div>`;
+  set.essay.forEach((q, i) => {
+    const qid = `essay_${i}`;
+    allQs.push(qid);
+    container.innerHTML += renderQuestion(qid, i + 1, q.q, q.a, 'essay', '20 Marks');
+  });
+
+  totalQuestions = allQs.length;
+  updateProgress();
+  document.getElementById('finishBtn').disabled = true;
+}
+
+function renderQuestion(qid, num, question, answer, textareaClass, marks) {
+  return `
+    <div class="question-block" id="block_${qid}">
+      <div class="q-num">Q${num}. <span style="float:right;color:var(--muted);font-size:0.85rem">${marks}</span></div>
+      <div class="q-text">${question}</div>
+      <textarea id="ans_${qid}" class="${textareaClass}" placeholder="Write your answer here..."></textarea>
+      <button class="btn btn-outline btn-sm check-btn" id="btn_${qid}" onclick="checkAnswer('${qid}')">Check Answer</button>
+      <div class="feedback" id="fb_${qid}"></div>
+    </div>`;
+}
+
+// ===== CHECK ANSWER (with topic-aware feedback) =====
+function checkAnswer(qid) {
+  const textarea = document.getElementById(`ans_${qid}`);
+  const answer = textarea.value.trim();
+  const fb = document.getElementById(`fb_${qid}`);
+  const btn = document.getElementById(`btn_${qid}`);
+
+  if (!answer) { textarea.focus(); return; }
+
+  // Parse qid
+  const [type, idx] = qid.split('_');
+  const set = testSets[currentSet];
+  let qObj;
+  if (type === 'tm') qObj = set.twoMark[parseInt(idx)];
+  else if (type === 'para') qObj = set.paragraph[parseInt(idx)];
+  else qObj = set.essay[parseInt(idx)];
+  const modelAnswer = qObj.a;
+  const qTopics = qObj.topics || [];
+
+  // Simple keyword matching for feedback
+  const keywords = extractKeywords(modelAnswer);
+  const studentWords = answer.toLowerCase();
+  let matchCount = 0;
+  keywords.forEach(kw => { if (studentWords.includes(kw.toLowerCase())) matchCount++; });
+  const matchRatio = keywords.length > 0 ? matchCount / keywords.length : 0;
+
+  let feedbackType, feedbackTitle, feedbackMsg;
+  if (matchRatio >= 0.5) {
+    feedbackType = 'correct';
+    feedbackTitle = '✓ Good attempt!';
+    feedbackMsg = 'Your answer covers several key points. Compare with the model answer below for completeness.';
+  } else if (matchRatio >= 0.25) {
+    feedbackType = 'incorrect';
+    feedbackTitle = '⚠ Partial answer';
+    feedbackMsg = 'Your answer addresses some points but is missing important content. Study the model answer below carefully.';
+  } else {
+    feedbackType = 'incorrect';
+    feedbackTitle = '✗ Needs improvement';
+    feedbackMsg = 'Your answer does not cover the expected key points. Please read the model answer below and revise your understanding.';
+  }
+
+  // Build topic-aware suggestion
+  let suggestionHtml = '';
+  if (matchRatio < 0.5 && qTopics.length > 0) {
+    const topicNames = qTopics.map(t => TOPICS[t] ? `${TOPICS[t].icon} ${TOPICS[t].name}` : t);
+    const learnTips = qTopics.map(t => {
+      const ld = LEARN_DATA.find(d => d.id === t);
+      return ld ? `<li>Review "<strong>${ld.title}</strong>" in the Learn section for key definitions and examples.</li>` : '';
+    }).filter(Boolean).join('');
+    suggestionHtml = `
+      <div class="suggestion-box">
+        <h4>💡 Learning Suggestion</h4>
+        <p>This question tests: ${topicNames.join(', ')}</p>
+        <ul>${learnTips}</ul>
+        <p style="margin-top:6px;font-size:0.85rem">Go to <strong>Learn Morphology</strong> from the home screen to study these topics.</p>
+      </div>`;
+  }
+
+  fb.className = `feedback ${feedbackType}`;
+  fb.innerHTML = `<h4>${feedbackTitle}</h4><p>${feedbackMsg}</p>${suggestionHtml}
+    <div style="margin-top:4px">${qTopics.map(t => TOPICS[t] ? `<span class="topic-tag">${TOPICS[t].icon} ${TOPICS[t].name}</span>` : '').join('')}</div>
+    <h4 style="margin-top:12px">Model Answer:</h4><div class="model-answer">${modelAnswer}</div>`;
+  fb.style.display = 'block';
+
+  btn.disabled = true;
+  btn.textContent = 'Checked ✓';
+  textarea.readOnly = true;
+  textarea.style.opacity = '0.7';
+
+  if (!scores[qid]) {
+    scores[qid] = { ratio: matchRatio, type: feedbackType === 'correct' ? 'good' : (matchRatio >= 0.25 ? 'partial' : 'weak'), topics: qTopics };
+    checkedCount++;
+    updateProgress();
+  }
+
+  if (checkedCount >= totalQuestions) {
+    document.getElementById('finishBtn').disabled = false;
+  }
+}
+
+function extractKeywords(text) {
+  // Extract meaningful terms from model answer
+  const stopWords = new Set(['the','a','an','is','are','was','were','be','been','being','have','has','had',
+    'do','does','did','will','would','shall','should','may','might','can','could','and','but','or','nor',
+    'not','no','so','if','then','than','that','this','these','those','it','its','of','in','on','at','to',
+    'for','with','by','from','as','into','about','between','through','during','before','after','above',
+    'below','up','down','out','off','over','under','again','further','once','here','there','when','where',
+    'why','how','all','each','every','both','few','more','most','other','some','such','only','own','same',
+    'which','what','who','whom','very','just','also','still']);
+
+  const words = text.toLowerCase().replace(/[^a-z0-9\s-]/g, ' ').split(/\s+/);
+  const meaningful = words.filter(w => w.length > 3 && !stopWords.has(w));
+  const unique = [...new Set(meaningful)];
+  // Return a subset of key terms
+  return unique.slice(0, Math.min(20, unique.length));
+}
+
+function updateProgress() {
+  const pct = totalQuestions > 0 ? Math.round((checkedCount / totalQuestions) * 100) : 0;
+  document.getElementById('progressFill').style.width = pct + '%';
+  document.getElementById('progressText').textContent = `${checkedCount} of ${totalQuestions} questions checked (${pct}%)`;
+}
+
+// ===== FINISH TEST =====
+function finishTest() {
+  if (checkedCount < totalQuestions) {
+    if (!confirm(`You have checked ${checkedCount} of ${totalQuestions} questions. Unchecked questions will count as unanswered. Continue?`)) return;
+  }
+
+  let goodCount = 0, partialCount = 0, weakCount = 0, unanswered = 0;
+  const totalPossible = totalQuestions;
+
+  Object.values(scores).forEach(s => {
+    if (s.type === 'good') goodCount++;
+    else if (s.type === 'partial') partialCount++;
+    else weakCount++;
+  });
+  unanswered = totalPossible - checkedCount;
+
+  const scorePercent = Math.round(((goodCount * 1 + partialCount * 0.5) / totalPossible) * 100);
+
+  let grade, gradeMsg;
+  if (scorePercent >= 80) { grade = 'Excellent'; gradeMsg = 'Outstanding performance! You have a strong grasp of English morphology.'; }
+  else if (scorePercent >= 60) { grade = 'Good'; gradeMsg = 'Good performance. Review the model answers for questions you found difficult.'; }
+  else if (scorePercent >= 40) { grade = 'Average'; gradeMsg = 'Satisfactory attempt. You should revisit the morphology notes and practise with the model answers.'; }
+  else { grade = 'Needs Improvement'; gradeMsg = 'You need more study. Go through the morphology lecture notes carefully and re-attempt this test.'; }
+
+  const topicBreakdown = analyseTopics();
+
+  const html = `
+    <div class="general-feedback">
+      <h2>Test Complete!</h2>
+      <p><strong>${esc(studentRollNo)}</strong> — <strong>${esc(studentName)}</strong><br>Set ${currentSet} (${currentSet === 1 ? 'Beginner' : 'Intermediate'})</p>
+      <div class="score-display">${scorePercent}%</div>
+      <div class="grade-text"><strong>${grade}</strong></div>
+      <p>${gradeMsg}</p>
+    </div>
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin:16px 0">
+      <h3 style="color:var(--accent);margin-bottom:12px">Performance Summary</h3>
+      <div class="stats-grid">
+        <div class="stat-card"><div class="stat-num" style="color:var(--correct)">${goodCount}</div><div class="stat-label">Good Answers</div></div>
+        <div class="stat-card"><div class="stat-num" style="color:#e6a700">${partialCount}</div><div class="stat-label">Partial Answers</div></div>
+        <div class="stat-card"><div class="stat-num" style="color:var(--incorrect)">${weakCount}</div><div class="stat-label">Weak Answers</div></div>
+        <div class="stat-card"><div class="stat-num" style="color:var(--muted)">${unanswered}</div><div class="stat-label">Unanswered</div></div>
+      </div>
+      <h4 style="margin-top:16px;margin-bottom:8px">Section Breakdown:</h4>
+      <ul class="feedback-detail">
+        <li><strong>Section A (Two-Mark):</strong> ${countSection('tm')} of 15 checked</li>
+        <li><strong>Section B (Paragraph):</strong> ${countSection('para')} of 6 checked</li>
+        <li><strong>Section C (Essay):</strong> ${countSection('essay')} of 4 checked</li>
+      </ul>
+      ${topicBreakdown}
+    </div>
+    <div style="text-align:center;margin:24px 0">
+      <button class="btn btn-primary" onclick="goHome()">Back to Home</button>
+    </div>`;
+
+  document.getElementById('resultsContent').innerHTML = html;
+  showScreen('resultsScreen');
+
+  // Save result
+  saveResult({ rollNo: studentRollNo, name: studentName, set: currentSet, score: scorePercent, grade,
+    good: goodCount, partial: partialCount, weak: weakCount, unanswered,
+    total: totalPossible, date: new Date().toISOString() });
+}
+
+function countSection(prefix) {
+  return Object.keys(scores).filter(k => k.startsWith(prefix)).length;
+}
+
+function analyseTopics() {
+  // Build topic performance from scores
+  const topicPerf = {}; // { topicId: { good:0, partial:0, weak:0, total:0 } }
+  Object.values(scores).forEach(s => {
+    (s.topics || []).forEach(t => {
+      if (!topicPerf[t]) topicPerf[t] = { good:0, partial:0, weak:0, total:0 };
+      topicPerf[t].total++;
+      if (s.type === 'good') topicPerf[t].good++;
+      else if (s.type === 'partial') topicPerf[t].partial++;
+      else topicPerf[t].weak++;
+    });
+  });
+
+  if (Object.keys(topicPerf).length === 0) {
+    return `<h4 style="margin-top:16px;margin-bottom:8px">Study Recommendations:</h4>
+      <ul class="feedback-detail">
+        <li>Review model answers for all questions marked as "Needs improvement" or "Partial".</li>
+        <li>Go to the <strong>Learn Morphology</strong> section on the home screen for topic-wise study material.</li>
+      </ul>`;
+  }
+
+  // Sort: weakest topics first
+  const sorted = Object.entries(topicPerf).sort((a,b) => {
+    const scoreA = (a[1].good + a[1].partial * 0.5) / a[1].total;
+    const scoreB = (b[1].good + b[1].partial * 0.5) / b[1].total;
+    return scoreA - scoreB;
+  });
+
+  let barsHtml = sorted.map(([tid, p]) => {
+    const pct = Math.round(((p.good + p.partial * 0.5) / p.total) * 100);
+    const cls = pct >= 60 ? 'strong' : (pct >= 30 ? 'medium' : 'weak');
+    const info = TOPICS[tid] || { name: tid, icon: '' };
+    return `<div class="topic-strength">
+      <span style="min-width:180px">${info.icon} ${info.name}</span>
+      <div class="bar-bg"><div class="bar-fill ${cls}" style="width:${pct}%"></div></div>
+      <span style="min-width:40px;text-align:right;font-weight:700">${pct}%</span>
+    </div>`;
+  }).join('');
+
+  // Generate next-step suggestions based on weak topics
+  const weakTopics = sorted.filter(([,p]) => {
+    const pct = ((p.good + p.partial * 0.5) / p.total) * 100;
+    return pct < 50;
+  });
+
+  let nextSteps = '';
+  if (weakTopics.length > 0) {
+    const steps = weakTopics.slice(0, 4).map(([tid]) => {
+      const ld = LEARN_DATA.find(d => d.id === tid);
+      const info = TOPICS[tid] || { name: tid, icon: '' };
+      return `<li>${info.icon} <strong>${info.name}</strong>${ld ? ': Review "' + ld.title + '" in the Learn section. Focus on the key points and examples.' : '.'}</li>`;
+    }).join('');
+    nextSteps = `<div class="next-step-box">
+      <h3>📌 Your Next Steps</h3>
+      <p style="margin-bottom:8px">Based on your performance, focus on these topics first:</p>
+      <ol>${steps}</ol>
+      <p style="margin-top:8px;font-size:0.9rem">Go to <strong>Learn Morphology</strong> on the home screen, then retake the test to track your improvement.</p>
+    </div>`;
+  } else {
+    nextSteps = `<div class="next-step-box">
+      <h3>🎉 Great Work!</h3>
+      <p>You performed well across all topics. To deepen your understanding:</p>
+      <ol>
+        <li>Try <strong>Test Set ${currentSet === 1 ? 2 : 1}</strong> for ${currentSet === 1 ? 'intermediate' : 'beginner'}-level practice.</li>
+        <li>Practice morpheme analysis on new words you encounter in reading.</li>
+        <li>Review any "Partial" answers against the model answers.</li>
+      </ol>
+    </div>`;
+  }
+
+  return `<h4 style="margin-top:16px;margin-bottom:8px">Topic-wise Performance:</h4>
+    <div style="padding:8px 0">${barsHtml}</div>
+    ${nextSteps}`;
+}
+
+// ===== STORAGE =====
+function getResults() {
+  try { return JSON.parse(localStorage.getItem('morphTwinResults') || '[]'); }
+  catch { return []; }
+}
+function saveResult(r) {
+  try {
+    const results = getResults();
+    results.push(r);
+    localStorage.setItem('morphTwinResults', JSON.stringify(results));
+  } catch(e) {}
+  // Also try sending to Google Sheets
+  if (SHEET_URL) {
+    fetch(SHEET_URL, { method:'POST', mode:'no-cors',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify(r) }).catch(()=>{});
+  }
+}
+
+// ===== TEACHER DASHBOARD =====
+function showDashboard() { showScreen('dashboardScreen'); }
+
+function teacherLogin() {
+  const u = document.getElementById('teacherUser').value.trim();
+  const p = document.getElementById('teacherPass').value;
+  if (u === TEACHER_USER && p === TEACHER_PASS) {
+    document.getElementById('loginBox').style.display = 'none';
+    renderDashboard();
+  } else {
+    document.getElementById('loginError').style.display = 'block';
+  }
+}
+
+function renderDashboard() {
+  const dc = document.getElementById('dashboardContent');
+  dc.style.display = 'block';
+  const results = getResults();
+
+  if (results.length === 0) {
+    dc.innerHTML = `<div class="no-data"><h3>No results yet</h3><p>Student results will appear here after tests are completed.</p></div>`;
+    return;
+  }
+
+  const totalTests = results.length;
+  const avgScore = Math.round(results.reduce((s,r) => s + r.score, 0) / totalTests);
+  const set1 = results.filter(r => r.set === 1);
+  const set2 = results.filter(r => r.set === 2);
+  const set1Avg = set1.length ? Math.round(set1.reduce((s,r) => s + r.score, 0) / set1.length) : '—';
+  const set2Avg = set2.length ? Math.round(set2.reduce((s,r) => s + r.score, 0) / set2.length) : '—';
+
+  let tableRows = results.map((r, i) => `
+    <tr>
+      <td>${i+1}</td>
+      <td>${esc(r.rollNo || '—')}</td>
+      <td>${esc(r.name)}</td>
+      <td>Set ${r.set}</td>
+      <td>${r.score}%</td>
+      <td>${r.grade}</td>
+      <td>${r.good}/${r.partial}/${r.weak}</td>
+      <td>${new Date(r.date).toLocaleDateString()}</td>
+    </tr>`).join('');
+
+  dc.innerHTML = `
+    <h2 style="color:var(--accent);margin-bottom:16px">Teacher Dashboard</h2>
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-num">${totalTests}</div><div class="stat-label">Total Tests Taken</div></div>
+      <div class="stat-card"><div class="stat-num">${avgScore}%</div><div class="stat-label">Overall Average</div></div>
+      <div class="stat-card"><div class="stat-num">${set1Avg}${typeof set1Avg==='number'?'%':''}</div><div class="stat-label">Set 1 Average</div></div>
+      <div class="stat-card"><div class="stat-num">${set2Avg}${typeof set2Avg==='number'?'%':''}</div><div class="stat-label">Set 2 Average</div></div>
+    </div>
+    <h3 style="margin-top:20px;color:var(--accent)">All Results</h3>
+    <div style="overflow-x:auto">
+    <table class="results">
+      <thead><tr><th>#</th><th>Roll No</th><th>Student</th><th>Test</th><th>Score</th><th>Grade</th><th>Good/Partial/Weak</th><th>Date</th></tr></thead>
+      <tbody>${tableRows}</tbody>
+    </table>
+    </div>
+    <div style="margin-top:16px;text-align:center">
+      <button class="btn btn-outline btn-sm" onclick="exportCSV()">Export CSV</button>
+      <button class="btn btn-outline btn-sm" onclick="clearResults()">Clear All Results</button>
+    </div>`;
+}
+
+function exportCSV() {
+  const results = getResults();
+  if (!results.length) return;
+  let csv = 'Roll No,Name,Set,Score,Grade,Good,Partial,Weak,Unanswered,Date\n';
+  results.forEach(r => {
+    csv += `"${r.rollNo || ''}","${r.name}",${r.set},${r.score}%,${r.grade},${r.good},${r.partial},${r.weak},${r.unanswered},${r.date}\n`;
+  });
+  const blob = new Blob([csv], {type:'text/csv'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'morphology_twin_results.csv';
+  a.click();
+}
+
+function clearResults() {
+  if (confirm('Delete all stored results? This cannot be undone.')) {
+    try { localStorage.removeItem('morphTwinResults'); } catch(e){}
+    renderDashboard();
+  }
+}
+
+function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+// ===== LEARN SCREEN =====
+function showLearnScreen() {
+  const lc = document.getElementById('learnContent');
+  lc.innerHTML = LEARN_DATA.map((topic, i) => {
+    const info = TOPICS[topic.id] || { icon: '', name: topic.title };
+    return `
+      <div class="learn-card" id="learn_${topic.id}">
+        <h4 onclick="toggleLearnCard(${i})" style="cursor:pointer">
+          ${info.icon} ${topic.title}
+          <span style="float:right;font-size:0.8rem;color:var(--muted)" id="arrow_${i}">▼</span>
+        </h4>
+        <div id="learnBody_${i}" style="display:none">
+          <p>${topic.content}</p>
+          <div class="key-points">
+            <strong>Key Points:</strong>
+            <ul>${topic.keyPoints.map(kp => `<li>${kp}</li>`).join('')}</ul>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+  showScreen('learnScreen');
+}
+
+function toggleLearnCard(i) {
+  const body = document.getElementById(`learnBody_${i}`);
+  const arrow = document.getElementById(`arrow_${i}`);
+  if (body.style.display === 'none') {
+    body.style.display = 'block';
+    arrow.textContent = '▲';
+  } else {
+    body.style.display = 'none';
+    arrow.textContent = '▼';
+  }
+}
+</script>
+</body>
+</html>
