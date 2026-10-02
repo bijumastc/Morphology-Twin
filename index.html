@@ -223,7 +223,7 @@ table.results tr:nth-child(even) { background:var(--card); }
         <h3>Learn Morphology <span class="badge" style="background:var(--correct)">Study</span></h3>
         <p>Review key concepts before you take the test. Topic-wise study material with definitions, examples, and quick-revision notes.</p>
       </div>
-      <div class="home-card" onclick="startQuickQuiz()">
+      <div class="home-card" onclick="startQuizLogin()">
         <h3>Quick Quiz <span class="badge" style="background:#e65100">30 Qs</span></h3>
         <p>Fill in the blanks · One-word answers · Multiple choice</p>
         <p>Fast-paced revision covering all morphology topics. Instant scoring with explanations.</p>
@@ -680,8 +680,20 @@ function beginTest() {
   studentName = document.getElementById('studentName').value.trim();
   if (!studentRollNo) { document.getElementById('studentRollNo').focus(); return; }
   if (!studentName) { document.getElementById('studentName').focus(); return; }
+  if (currentSet === 'qq') {
+    startQuickQuiz();
+    return;
+  }
   renderTest();
   showScreen('testScreen');
+}
+
+function startQuizLogin() {
+  currentSet = 'qq';
+  showScreen('nameScreen');
+  document.getElementById('studentRollNo').value = '';
+  document.getElementById('studentName').value = '';
+  document.getElementById('studentRollNo').focus();
 }
 
 function confirmExit() {
@@ -1402,6 +1414,21 @@ function finishQuickQuiz() {
       <button class="btn btn-primary" onclick="goHome()">Back to Home</button>
       <button class="btn btn-outline" style="margin-left:8px" onclick="startQuickQuiz()">Retake Quiz</button>
     </div>`;
+
+  // Save result to localStorage and Google Sheets
+  saveResult({
+    rollNo: studentRollNo,
+    name: studentName,
+    set: 'Quick Quiz',
+    score: pct,
+    grade: grade,
+    good: qqCorrect,
+    partial: 0,
+    weak: total - qqCorrect,
+    unanswered: total - qqAnswered,
+    total: total,
+    date: new Date().toISOString()
+  });
 
   showScreen('quizResultScreen');
 }
